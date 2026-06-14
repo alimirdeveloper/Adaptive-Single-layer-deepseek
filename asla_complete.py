@@ -1,6 +1,6 @@
 """
 ASLA Framework for Energy-efficient and Privacy-preserving Load Forecasting
-Complete implementation with real PJM data support - FULLY FIXED
+With Quantization Support (8-bit, 16-bit, 32-bit)
 """
 
 import numpy as np
@@ -24,7 +24,65 @@ tf.random.set_seed(42)
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 # ============================================================================
-# PART 1: DATA LOADING FOR PJM FILES
+# PART 1: QUANTIZATION FUNCTIONS (as in paper Section 4.3)
+# ============================================================================
+
+def quantize_weights_fixed_point(weights, bits=32, int_bits=None):
+    """
+    Quantize weights to fixed-point representation as described in paper Eq (2)
+    
+    For 32-bit: 8 bits integer, 24 bits fractional (range: -128 to 127.999)
+    For 16-bit: 5 bits integer, 11 bits fractional (range: -16 to 15.999)
+    For 8-bit:  2 bits integer, 6 bits fractional  (range: -2 to 1.984)
+    """
+    if bits == 32:
+        # Keep as float32 (no quantization)
+        return weights
+    
+    # Set integer bits based on total bits (as per paper Section 5.3)
+    if int_bits is None:
+        if bits == 16:
+            int_bits = 5  # 5 bits integer, 11 bits fractional
+        elif bits == 8:
+            int_bits = 2  # 2 bits integer, 6 bits fractional
+        else:
+            int_bits = 8
+    
+    frac_bits = bits - int_bits - 1  # -1 for sign bit
+    scale = 2 ** frac_bits
+    
+    def quantize_array(arr):
+        # Calculate range
+        max_val = (2 ** int_bits) - (1 / scale)
+        min_val = -(2 ** int_bits)
+        
+        # Clip to range
+        arr_clipped = np.clip(arr, min_val, max_val)
+        
+        # Quantize: round to nearest fixed-point value
+        quantized = np.round(arr_clipped * scale) / scale
+        return quantized
+    
+    if isinstance(weights, list):
+        return [quantize_array(w) for w in weights]
+    else:
+        return quantize_array(weights)
+
+def calculate_memory_savings(bits):
+    """Calculate memory savings compared to 32-bit system"""
+    if bits == 32:
+        return 0
+    else:
+        return (1 - bits/32) * 100
+
+def calculate_communication_cost(num_weights, num_rounds, num_clients, bits):
+    """Calculate communication cost in KB as per paper Section 6.4"""
+    bytes_per_weight = bits // 8
+    total_bytes = num_weights * bytes_per_weight * num_rounds * num_clients * 2  # *2 for upload+download
+    return total_bytes / 1024  # Convert to KB
+
+# ============================================================================
+# PART 2: DATA LOADING FOR PJM FILES
 # ============================================================================
 
 def inspect_file_structure(data_folder='.'):
@@ -45,9 +103,7 @@ def inspect_file_structure(data_folder='.'):
         print("-"*40)
 
 def load_pjm_multiple_files(data_folder='.', file_patterns=None):
-    """
-    Load PJM data from multiple CSV files
-    """
+    """Load PJM data from multiple CSV files"""
     if file_patterns is None:
         file_patterns = [
             'AEP_hourly', 'COMED_hourly', 'pjm_hourly_est',
@@ -57,51 +113,21 @@ def load_pjm_multiple_files(data_folder='.', file_patterns=None):
     
     client_data = {}
     
-    # First try specific patterns
-    for pattern in file_patterns:
-        for ext in ['.csv', '.CSV']:
-            filename = f"{pattern}{ext}"
-            filepath = os.path.join(data_folder, filename)
-            
-            if os.path.exists(filepath):
-                print(f"Loading: {filename}")
-                df = pd.read_csv(filepath)
-                
-                # Find numeric column
-                numeric_col = None
-                for col in df.columns:
-                    if 'MW' in col or 'load' in col.lower() or 'value' in col.lower():
-                        numeric_col = col
-                        break
-                
-                if numeric_col is None and len(df.columns) > 1:
-                    numeric_col = df.columns[1]
-                else:
-                    numeric_col = df.columns[0]
-                
-                values = pd.to_numeric(df[numeric_col], errors='coerce').dropna().values
-                
-                if len(values) > 0:
-                    client_data[pattern] = values
-                    print(f"   Loaded {len(values)} readings from column '{numeric_col}'")
-                break
+    # Try loading any CSV file
+    csv_files = [f for f in os.listdir(data_folder) if f.endswith('.csv')]
+    print(f"\nScanning {len(csv_files)} CSV files...")
     
-    # Try loading any CSV file if no data found
-    if not client_data:
-        csv_files = [f for f in os.listdir(data_folder) if f.endswith('.csv')]
-        print(f"\nScanning {len(csv_files)} CSV files...")
+    for csv_file in csv_files:
+        filepath = os.path.join(data_folder, csv_file)
+        df = pd.read_csv(filepath)
+        client_name = csv_file.replace('.csv', '').replace('_hourly', '')
         
-        for csv_file in csv_files:
-            filepath = os.path.join(data_folder, csv_file)
-            df = pd.read_csv(filepath)
-            client_name = csv_file.replace('.csv', '').replace('_hourly', '')
-            
-            for col in df.columns:
-                values = pd.to_numeric(df[col], errors='coerce').dropna()
-                if len(values) > 1000:  # Only keep if substantial data
-                    client_data[client_name] = values.values
-                    print(f"  ✓ {csv_file} -> column '{col}': {len(values)} readings")
-                    break
+        for col in df.columns:
+            values = pd.to_numeric(df[col], errors='coerce').dropna()
+            if len(values) > 1000:  # Only keep if substantial data
+                client_data[client_name] = values.values
+                print(f"  ✓ {csv_file} -> column '{col}': {len(values)} readings")
+                break
     
     if not client_data:
         raise ValueError("No valid numeric data found in any CSV file")
@@ -120,7 +146,7 @@ def load_pjm_multiple_files(data_folder='.', file_patterns=None):
     return aligned_data, client_names
 
 # ============================================================================
-# PART 2: FEATURE PREPROCESSING
+# PART 3: FEATURE PREPROCESSING
 # ============================================================================
 
 def prepare_features(data, lookback=24):
@@ -163,7 +189,7 @@ def preprocess_client_data(data, lookback=24, test_size=0.3):
     return X_train, X_test, y_train, y_test, scaler
 
 # ============================================================================
-# PART 3: HETEROGENEITY ANALYSIS
+# PART 4: HETEROGENEITY ANALYSIS
 # ============================================================================
 
 def test_data_heterogeneity(client_data, client_names):
@@ -206,7 +232,7 @@ def test_data_heterogeneity(client_data, client_names):
             print("   → ASLA framework is well-suited for this data")
 
 # ============================================================================
-# PART 4: MODEL DEFINITIONS
+# PART 5: MODEL DEFINITIONS
 # ============================================================================
 
 def create_model_for_data1(input_dim=5):
@@ -227,11 +253,12 @@ def set_layer_weights(model, layer_idx, weights):
     model.layers[layer_idx].set_weights(weights)
 
 # ============================================================================
-# PART 5: FEDERATED LEARNING WITH ASLA
+# PART 6: FEDERATED LEARNING WITH QUANTIZATION
 # ============================================================================
 
 class FederatedClient:
-    def __init__(self, client_id, X_train, y_train, X_test, y_test, model_fn, scaler=None, name=""):
+    def __init__(self, client_id, X_train, y_train, X_test, y_test, model_fn, 
+                 scaler=None, name="", quantization_bits=32):
         self.client_id = client_id
         self.name = name
         self.X_train = X_train
@@ -240,6 +267,7 @@ class FederatedClient:
         self.y_test = y_test
         self.model = model_fn()
         self.scaler = scaler
+        self.quantization_bits = quantization_bits
         self.stopped = False
         self.last_update = None
         self.consecutive_no_improvement = 0
@@ -258,7 +286,11 @@ class FederatedClient:
         return self.model.evaluate(self.X_test, self.y_test, verbose=0)
     
     def get_layer_weights(self, layer_idx):
-        return get_layer_weights(self.model, layer_idx)
+        weights = get_layer_weights(self.model, layer_idx)
+        # Apply quantization if needed
+        if self.quantization_bits < 32:
+            weights = quantize_weights_fixed_point(weights, self.quantization_bits)
+        return weights
     
     def set_layer_weights(self, layer_idx, weights):
         set_layer_weights(self.model, layer_idx, weights)
@@ -279,10 +311,12 @@ class FederatedClient:
 
 
 class ASLAFederatedServer:
-    def __init__(self, model_fn, num_clients, aggregation_layer=0, stopping_threshold=0.3):
+    def __init__(self, model_fn, num_clients, aggregation_layer=0, 
+                 quantization_bits=32, stopping_threshold=0.3):
         self.global_model = model_fn()
         self.num_clients = num_clients
         self.aggregation_layer = aggregation_layer
+        self.quantization_bits = quantization_bits
         self.stopping_threshold = stopping_threshold
         self.round = 0
         self.history = {'loss': [], 'mape': []}
@@ -350,7 +384,208 @@ class ASLAFederatedServer:
         return self.history
 
 # ============================================================================
-# PART 6: VISUALIZATION
+# PART 7: QUANTIZATION EXPERIMENT (as per paper Section 5.3)
+# ============================================================================
+
+def run_quantization_experiment(clients, num_rounds=30):
+    """
+    Run quantization experiment comparing 32-bit, 16-bit, and 8-bit
+    As described in paper Section 5.3 and Figure 8
+    """
+    print("\n" + "="*70)
+    print("QUANTIZATION EXPERIMENT (Paper Section 5.3)")
+    print("="*70)
+    print("\nTesting different bit precisions for weight quantization:")
+    print("  • 32-bit floating point (baseline)")
+    print("  • 16-bit fixed point (5 int bits, 11 frac bits)")
+    print("  • 8-bit fixed point (2 int bits, 6 frac bits)")
+    print("-"*70)
+    
+    quantization_configs = [
+        {'bits': 32, 'name': '32-bit Float', 'int_bits': 8, 'color': 'blue', 'marker': 'o'},
+        {'bits': 16, 'name': '16-bit Fixed', 'int_bits': 5, 'color': 'green', 'marker': 's'},
+        {'bits': 8, 'name': '8-bit Fixed', 'int_bits': 2, 'color': 'red', 'marker': '^'}
+    ]
+    
+    results = {}
+    final_mape = {}
+    
+    for config in quantization_configs:
+        bits = config['bits']
+        name = config['name']
+        
+        print(f"\n--- Testing {name} System ---")
+        print(f"    Integer bits: {config['int_bits']}, Fractional bits: {bits - config['int_bits'] - 1}")
+        
+        # Create server with quantization
+        server = ASLAFederatedServer(
+            model_fn=create_model_for_data1,
+            num_clients=len(clients),
+            aggregation_layer=1,  # Layer 2 (best from previous experiment)
+            quantization_bits=bits,
+            stopping_threshold=0.3
+        )
+        
+        # Create clients with quantization
+        quantized_clients = []
+        for c in clients:
+            quantized_clients.append(FederatedClient(
+                c.client_id, c.X_train, c.y_train,
+                c.X_test, c.y_test, create_model_for_data1, 
+                c.scaler, c.name, quantization_bits=bits
+            ))
+        
+        # Train
+        history = server.train(quantized_clients, num_rounds=num_rounds, local_epochs=1)
+        results[name] = history
+        final_mape[name] = history['mape'][-1] if history['mape'] else 100
+        
+        print(f"   ✅ Final MAPE after {len(history['mape'])} rounds: {final_mape[name]:.2f}%")
+    
+    # Calculate degradation compared to 32-bit
+    baseline = final_mape['32-bit Float']
+    print("\n" + "="*70)
+    print("QUANTIZATION IMPACT ANALYSIS")
+    print("="*70)
+    
+    for name, mape in final_mape.items():
+        degradation = ((mape - baseline) / baseline) * 100
+        memory_saving = calculate_memory_savings(32 if name == '32-bit Float' else 
+                                                  16 if name == '16-bit Fixed' else 8)
+        print(f"\n{name}:")
+        print(f"  Final MAPE: {mape:.2f}%")
+        if name != '32-bit Float':
+            print(f"  Degradation from 32-bit: {degradation:+.2f}%")
+            print(f"  Memory saving: {memory_saving:.0f}%")
+    
+    # Plot quantization comparison (as in paper Figure 8)
+    plot_quantization_comparison(results)
+    
+    # Calculate communication costs (as in paper Section 6.4)
+    calculate_communication_savings(clients, results)
+    
+    return results
+
+def plot_quantization_comparison(results):
+    """Plot quantization comparison similar to paper Figure 8"""
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+    
+    # Plot 1: MAPE over rounds
+    ax1 = axes[0]
+    colors = {'32-bit Float': 'blue', '16-bit Fixed': 'green', '8-bit Fixed': 'red'}
+    markers = {'32-bit Float': 'o', '16-bit Fixed': 's', '8-bit Fixed': '^'}
+    
+    for name, history in results.items():
+        rounds = range(1, len(history['mape']) + 1)
+        ax1.plot(rounds, history['mape'], marker=markers[name], 
+                label=name, color=colors[name], linewidth=2, markersize=4)
+    
+    ax1.set_xlabel('Communication Round', fontsize=12)
+    ax1.set_ylabel('MAPE (%)', fontsize=12)
+    ax1.set_title('Effect of Quantization on Model Performance\n(Paper Figure 8)', fontsize=12)
+    ax1.legend(fontsize=10)
+    ax1.grid(True, alpha=0.3)
+    
+    # Plot 2: Final MAPE comparison
+    ax2 = axes[1]
+    names = list(results.keys())
+    final_mape = [results[n]['mape'][-1] for n in names]
+    colors_bar = ['blue', 'green', 'red']
+    
+    bars = ax2.bar(names, final_mape, color=colors_bar, edgecolor='black')
+    ax2.set_ylabel('Final MAPE (%)', fontsize=12)
+    ax2.set_title('Quantization Impact on Accuracy', fontsize=12)
+    
+    # Add value labels on bars
+    for bar, value in zip(bars, final_mape):
+        ax2.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.5, 
+                f'{value:.1f}%', ha='center', va='bottom', fontsize=10)
+    
+    ax2.grid(True, alpha=0.3, axis='y')
+    
+    plt.tight_layout()
+    plt.savefig('quantization_comparison.png', dpi=150)
+    plt.show()
+
+def calculate_communication_savings(clients, results):
+    """
+    Calculate communication cost savings as in paper Section 6.4
+    """
+    print("\n" + "="*70)
+    print("COMMUNICATION COST ANALYSIS (Paper Section 6.4)")
+    print("="*70)
+    
+    # Calculate number of weights in a layer
+    # For our 3-layer ANN: Layer 2 (hidden) has 100x50 = 5000 weights
+    num_weights_per_layer = 5000  # Hidden layer weights
+    
+    num_clients = len(clients)
+    
+    # Get rounds for each quantization method
+    rounds_info = {}
+    for name, history in results.items():
+        rounds_info[name] = len(history['mape'])
+    
+    print(f"\nNumber of clients: {num_clients}")
+    print(f"Weights per layer: {num_weights_per_layer:,}")
+    print(f"Communication rounds: 32-bit={rounds_info['32-bit Float']}, "
+          f"16-bit={rounds_info['16-bit Fixed']}, 8-bit={rounds_info['8-bit Fixed']}")
+    
+    print("\n" + "-"*70)
+    print(f"{'System':<15} {'Bits':<8} {'Cost per Round (KB)':<20} {'Total Cost (KB)':<15} {'Saving vs 32-bit':<15}")
+    print("-"*70)
+    
+    baseline_cost = None
+    costs = {}
+    
+    for bits, name in [(32, '32-bit Float'), (16, '16-bit Fixed'), (8, '8-bit Fixed')]:
+        cost_per_round = calculate_communication_cost(num_weights_per_layer, 1, num_clients, bits)
+        total_rounds = rounds_info[name]
+        total_cost = cost_per_round * total_rounds
+        
+        costs[name] = total_cost
+        
+        if bits == 32:
+            baseline_cost = total_cost
+            saving = "0%"
+        else:
+            saving = f"{(1 - total_cost/baseline_cost)*100:.1f}%"
+            # Also calculate fold reduction as in paper
+            fold_reduction = baseline_cost / total_cost
+            print(f"\n  📈 {name} achieves {fold_reduction:.1f}x communication reduction!")
+        
+        print(f"{name:<15} {bits:<8} {cost_per_round:>15.2f} KB     {total_cost:>12.2f} KB     {saving:>12}")
+    
+    print("-"*70)
+    
+    # Compare with paper's claims
+    print("\n" + "="*70)
+    print("COMPARISON WITH PAPER'S CLAIMS")
+    print("="*70)
+    print("\nPaper's results (Section 5.3 and 6.4):")
+    print("  • Quantization loss degradation: 0.01% for Data 1, 1.25% for Data 2")
+    print("  • Communication cost reduction: 829.2x for Data 1")
+    print("  • Communication cost reduction: 5522x for Data 2")
+    print("  • Memory reduction: 75% (32-bit → 8-bit)")
+    
+    # Our results
+    if '32-bit Float' in results and '8-bit Fixed' in results:
+        mape_32 = results['32-bit Float']['mape'][-1]
+        mape_8 = results['8-bit Fixed']['mape'][-1]
+        degradation = ((mape_8 - mape_32) / mape_32) * 100
+        
+        print("\nOur results with PJM data:")
+        print(f"  • 8-bit vs 32-bit MAPE degradation: {degradation:.2f}%")
+        print(f"  • Memory saving (32-bit → 8-bit): {calculate_memory_savings(8):.0f}%")
+        
+        if '16-bit Fixed' in results:
+            fold_reduction_16 = costs['32-bit Float'] / costs['16-bit Fixed']
+            fold_reduction_8 = costs['32-bit Float'] / costs['8-bit Fixed']
+            print(f"  • Communication reduction (32→16-bit): {fold_reduction_16:.1f}x")
+            print(f"  • Communication reduction (32→8-bit): {fold_reduction_8:.1f}x")
+
+# ============================================================================
+# PART 8: VISUALIZATION
 # ============================================================================
 
 def plot_client_data(client_data, client_names):
@@ -395,6 +630,7 @@ def plot_client_data(client_data, client_names):
     ax4.grid(True, alpha=0.3)
     
     plt.tight_layout()
+    plt.savefig('client_data_distribution.png', dpi=150)
     plt.show()
 
 def compare_aggregation_layers(results_dict):
@@ -405,29 +641,38 @@ def compare_aggregation_layers(results_dict):
     
     fig, axes = plt.subplots(1, 2, figsize=(12, 4))
     
-    axes[0].bar(layers, mape_values, color='skyblue')
+    axes[0].bar(layers, mape_values, color='skyblue', edgecolor='black')
     axes[0].set_xlabel('Aggregation Layer')
     axes[0].set_ylabel('Final MAPE (%)')
     axes[0].set_title('Performance by Layer')
-    axes[0].grid(True, alpha=0.3)
+    axes[0].grid(True, alpha=0.3, axis='y')
     
-    axes[1].bar(layers, rounds, color='lightcoral')
+    # Add value labels
+    for i, v in enumerate(mape_values):
+        axes[0].text(i, v + 0.5, f'{v:.1f}%', ha='center', fontsize=10)
+    
+    axes[1].bar(layers, rounds, color='lightcoral', edgecolor='black')
     axes[1].set_xlabel('Aggregation Layer')
     axes[1].set_ylabel('Communication Rounds')
     axes[1].set_title('Convergence Speed')
-    axes[1].grid(True, alpha=0.3)
+    axes[1].grid(True, alpha=0.3, axis='y')
+    
+    for i, v in enumerate(rounds):
+        axes[1].text(i, v + 0.5, f'{v}', ha='center', fontsize=10)
     
     plt.suptitle('ASLA Framework: Layer-wise Comparison')
     plt.tight_layout()
+    plt.savefig('layer_comparison.png', dpi=150)
     plt.show()
 
 # ============================================================================
-# PART 7: MAIN EXPERIMENT
+# PART 9: MAIN EXPERIMENT
 # ============================================================================
 
 def run_pjm_experiment(data_folder='.'):
     print("="*60)
     print("ASLA FRAMEWORK ON REAL PJM SMART GRID DATA")
+    print("WITH QUANTIZATION SUPPORT (8-bit, 16-bit, 32-bit)")
     print("="*60)
     
     inspect_file_structure(data_folder)
@@ -467,11 +712,12 @@ def run_pjm_experiment(data_folder='.'):
     
     print(f"\n✅ Using {len(clients)} clients")
     
+    # Experiment 1: Compare aggregation layers
     print("\n" + "="*60)
-    print("EXPERIMENT: Comparing Aggregation Layers")
+    print("EXPERIMENT 1: Comparing Aggregation Layers")
     print("="*60)
     
-    results = {}
+    results_layers = {}
     for layer_idx, layer_name in [(0, 'Layer 1'), (1, 'Layer 2'), (2, 'Layer 3')]:
         print(f"\n--- Aggregating {layer_name} ---")
         server = ASLAFederatedServer(create_model_for_data1, len(clients), layer_idx)
@@ -480,26 +726,28 @@ def run_pjm_experiment(data_folder='.'):
                        c.X_test, c.y_test, create_model_for_data1, c.scaler, c.name) for c in clients]
         
         history = server.train(fresh_clients, num_rounds=20, local_epochs=1)
-        results[layer_name] = history
+        results_layers[layer_name] = history
         if history['mape']:
             print(f"   Final MAPE: {history['mape'][-1]:.2f}%")
     
-    compare_aggregation_layers(results)
+    compare_aggregation_layers(results_layers)
+    
+    # Experiment 2: Quantization (using best layer from above - Layer 2)
+    print("\n" + "="*60)
+    print("EXPERIMENT 2: Quantization Effects (8-bit vs 16-bit vs 32-bit)")
+    print("="*60)
+    
+    quantization_results = run_quantization_experiment(clients, num_rounds=20)
     
     print("\n" + "="*60)
-    print("EXPECTED RESULTS (from paper):")
+    print("EXPERIMENT COMPLETE")
     print("="*60)
-    print("• Communication cost reduction: 829.2x for Data 1")
-    print("• Memory reduction: 75% (32-bit → 8-bit)")
     
-    return results, clients
+    return results_layers, quantization_results
 
 # ============================================================================
 # MAIN
 # ============================================================================
 
 if __name__ == "__main__":
-    results, clients = run_pjm_experiment(".")
-    print("\n" + "="*60)
-    print("EXPERIMENT COMPLETE")
-    print("="*60)
+    results_layers, quantization_results = run_pjm_experiment(".")
