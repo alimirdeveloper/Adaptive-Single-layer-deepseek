@@ -242,147 +242,405 @@ class FederatedClient:
 # PART 7: ASLA SERVER (Single Layer Aggregation)
 # ============================================================================
 
+# class ASLAServer:
+#     def __init__(self, num_clients, agg_layer=1, quant_bits=32):
+#         self.global_model = create_model()
+#         self.num_clients = num_clients
+#         self.agg_layer = agg_layer
+#         self.quant_bits = quant_bits
+#         self.comm_round = 0  # Changed from 'round' to 'comm_round'
+#         self.history = {'mape': []}
+    
+#     def aggregate(self, client_weights):
+#         if not client_weights:
+#             return None
+#         avg_weights = []
+#         # For each layer (but only ONE layer is passed!)
+#         for i in range(len(client_weights[0])):
+#             # Sum all client weights for this layer
+#             avg_weights.append(np.mean([w[i] for w in client_weights], axis=0))
+#         return avg_weights
+    
+#     def do_round(self, clients, local_epochs=1, batch_size=300):  # Renamed method
+#         self.comm_round += 1
+#         global_weights = get_layer_weights(self.global_model, self.agg_layer)
+        
+#         updates = []
+#         for client in clients:
+#             if client.stopped:
+#                 if client.last_update:
+#                     updates.append(client.last_update)
+#                 continue
+            
+#             client.set_layer_weights(self.agg_layer, global_weights)
+#             loss = client.train_local(local_epochs, batch_size)
+            
+#             if loss is not None:
+#                 updates.append(client.get_layer_weights(self.agg_layer))
+#                 client.last_update = updates[-1]
+#                 client.check_stopping(loss)
+        
+#         if updates:
+#             agg_weights = self.aggregate(updates)
+#             set_layer_weights(self.global_model, self.agg_layer, agg_weights)
+        
+#         # Evaluate
+#         mape_values = []
+#         for client in clients:
+#             client.set_layer_weights(self.agg_layer, 
+#                 get_layer_weights(self.global_model, self.agg_layer))
+#             res = client.evaluate()
+#             if len(res) >= 3 and not np.isinf(res[2]):
+#                 mape_values.append(res[2])
+        
+#         if mape_values:
+#             avg_mape = np.mean(mape_values)
+#             self.history['mape'].append(avg_mape)
+#             print(f"  Round {self.comm_round}: MAPE = {avg_mape:.2f}%")
+        
+#         stopped = sum(1 for c in clients if c.stopped)
+#         return stopped < 0.3 * len(clients)
+    
+#     def train(self, clients, num_rounds=20):
+#         for _ in range(num_rounds):
+#             if not self.do_round(clients):
+#                 break
+#         return self.history
+
 class ASLAServer:
+    """
+    کلاس سرور برای چارچوب ASLA (تجمیع تطبیقی تک لایه)
+    Adaptive Single-Layer Aggregation Server
+    این کلاس پیاده‌کننده روش اصلی مقاله است
+    """
+    
     def __init__(self, num_clients, agg_layer=1, quant_bits=32):
-        self.global_model = create_model()
-        self.num_clients = num_clients
-        self.agg_layer = agg_layer
-        self.quant_bits = quant_bits
-        self.comm_round = 0  # Changed from 'round' to 'comm_round'
-        self.history = {'mape': []}
+        """
+        سازنده کلاس - مقداردهی اولیه سرور ASLA
+        
+        پارامترها:
+            num_clients: تعداد کلاینت‌ها (دستگاه‌های IoT)
+            agg_layer: شماره لایه‌ای که قرار است تجمیع شود (پیش‌فرض: 1 = لایه دوم)
+            quant_bits: تعداد بیت‌های کوانتیزاسیون (8, 16, 32)
+        """
+        self.global_model = create_model()  # ایجاد مدل سراسری (شامل ۳ لایه)
+        self.num_clients = num_clients      # تعداد کلاینت‌ها
+        self.agg_layer = agg_layer          # لایه انتخاب شده برای تجمیع
+        self.quant_bits = quant_bits        # بیت‌های کوانتیزاسیون
+        self.comm_round = 0                 # شمارنده دورهای ارتباطی
+        self.history = {'mape': []}         # ذخیره تاریخچه خطا (MAPE)
     
     def aggregate(self, client_weights):
+        """
+        تابع تجمیع ASLA - قلب تپنده روش پیشنهادی
+        اینجا فقط یک لایه (نه همه لایه‌ها) تجمیع می‌شود
+        
+        فرمول: G_t^selected = (1/K) * Σ W_{t,i}^{selected}
+        
+        ورودی: لیست وزن‌های دریافتی از کلاینت‌ها (فقط یک لایه)
+        خروجی: وزن‌های تجمیع شده برای آن لایه
+        """
         if not client_weights:
             return None
+        
         avg_weights = []
+        # برای هر لایه (اما فقط یک لایه ارسال شده است!)
         for i in range(len(client_weights[0])):
+            # جمع تمام وزن‌های کلاینت‌ها برای این لایه
+            # محاسبه میانگین: (1/K) * Σ W_i
             avg_weights.append(np.mean([w[i] for w in client_weights], axis=0))
-        return avg_weights
+        
+        return avg_weights  # بازگشت وزن تجمیع شده برای یک لایه
     
-    def do_round(self, clients, local_epochs=1, batch_size=300):  # Renamed method
-        self.comm_round += 1
+    def do_round(self, clients, local_epochs=1, batch_size=300):
+        """
+        اجرای یک دور کامل از یادگیری فدرال با روش ASLA
+        
+        مراحل:
+        1. ارسال لایه انتخاب‌شده از سرور به کلاینت‌ها
+        2. آموزش محلی روی هر کلاینت
+        3. دریافت فقط همان لایه از کلاینت‌ها
+        4. تجمیع فقط همان لایه (با تابع aggregate)
+        5. ارزیابی مدل سراسری
+        """
+        self.comm_round += 1  # افزایش شمارنده دور
+        
+        # مرحله ۱: دریافت لایه انتخاب شده از مدل سراسری
         global_weights = get_layer_weights(self.global_model, self.agg_layer)
         
-        updates = []
+        updates = []  # لیست برای ذخیره به‌روزرسانی‌های کلاینت‌ها
+        
+        # مرحله ۲: ارسال به تمام کلاینت‌ها و دریافت به‌روزرسانی
         for client in clients:
+            # اگر کلاینت متوقف شده باشد، آخرین به‌روزرسانی را استفاده کن
             if client.stopped:
                 if client.last_update:
                     updates.append(client.last_update)
                 continue
             
+            # ارسال لایه انتخاب شده به کلاینت (فقط یک لایه!)
             client.set_layer_weights(self.agg_layer, global_weights)
+            
+            # مرحله ۳: آموزش محلی روی داده‌های کلاینت
             loss = client.train_local(local_epochs, batch_size)
             
+            # اگر آموزش موفق بود، وزن لایه را دریافت کن
             if loss is not None:
+                # دریافت فقط همان لایه از کلاینت (نه همه لایه‌ها)
                 updates.append(client.get_layer_weights(self.agg_layer))
-                client.last_update = updates[-1]
-                client.check_stopping(loss)
+                client.last_update = updates[-1]  # ذخیره آخرین به‌روزرسانی
+                client.check_stopping(loss)  # بررسی شرط توقف
         
+        # مرحله ۴: تجمیع فقط یک لایه (فرمول اصلی ASLA!)
         if updates:
-            agg_weights = self.aggregate(updates)
+            agg_weights = self.aggregate(updates)  # ← قلب ASLA اینجاست
             set_layer_weights(self.global_model, self.agg_layer, agg_weights)
         
-        # Evaluate
+        # مرحله ۵: ارزیابی مدل سراسری روی همه کلاینت‌ها
         mape_values = []
         for client in clients:
+            # تنظیم لایه تجمیع شده روی کلاینت برای ارزیابی
             client.set_layer_weights(self.agg_layer, 
                 get_layer_weights(self.global_model, self.agg_layer))
-            res = client.evaluate()
+            res = client.evaluate()  # محاسبه خطا روی داده‌های تست
             if len(res) >= 3 and not np.isinf(res[2]):
-                mape_values.append(res[2])
+                mape_values.append(res[2])  # ذخیره MAPE
         
+        # محاسبه میانگین MAPE و ذخیره در تاریخچه
         if mape_values:
             avg_mape = np.mean(mape_values)
             self.history['mape'].append(avg_mape)
             print(f"  Round {self.comm_round}: MAPE = {avg_mape:.2f}%")
         
+        # بررسی شرط توقف: اگر بیش از ۳۰٪ کلاینت‌ها متوقف شده‌اند، پایان
         stopped = sum(1 for c in clients if c.stopped)
         return stopped < 0.3 * len(clients)
     
     def train(self, clients, num_rounds=20):
+        """
+        حلقه اصلی آموزش - اجرای چندین دور ارتباطی
+        
+        ورودی: لیست کلاینت‌ها، تعداد دورها
+        خروجی: تاریخچه خطا (MAPE) در هر دور
+        """
         for _ in range(num_rounds):
+            # هر دور یک مرحله do_round را اجرا کن
             if not self.do_round(clients):
-                break
-        return self.history
-
+                break  # اگر شرط توقف برقرار شد، متوقف کن
+        return self.history  # بازگشت تاریخچه خطاها
 # ============================================================================
 # PART 8: FEDAVG SERVER (All Layers Aggregation)
 # ============================================================================
 
+# class FedAvgServer:
+#     def __init__(self, num_clients, quant_bits=32):
+#         self.global_model = create_model()
+#         self.num_clients = num_clients
+#         self.quant_bits = quant_bits
+#         self.comm_round = 0  # Changed from 'round' to 'comm_round'
+#         self.history = {'mape': []}
+    
+#     def aggregate_all(self, client_models):
+#         if not client_models:
+#             return None
+#         num_layers = len(client_models[0])
+#         aggregated = []
+#         for layer_idx in range(num_layers):
+#             layer_weights = [model[layer_idx] for model in client_models]
+#             avg_layer = []
+#             for i in range(len(layer_weights[0])):
+#                 avg_layer.append(np.mean([w[i] for w in layer_weights], axis=0))
+#             aggregated.append(avg_layer)
+#         return aggregated
+    
+#     def do_round(self, clients, local_epochs=1, batch_size=300):  # Renamed method
+#         self.comm_round += 1
+        
+#         # Save global weights
+#         global_weights = [get_layer_weights(self.global_model, i) 
+#                          for i in range(len(self.global_model.layers))]
+        
+#         updates = []
+#         for client in clients:
+#             if client.stopped:
+#                 continue
+            
+#             # Set all global weights
+#             for i, w in enumerate(global_weights):
+#                 client.set_layer_weights(i, w)
+            
+#             loss = client.train_local(local_epochs, batch_size)
+            
+#             if loss is not None:
+#                 # Get all layer weights
+#                 all_weights = [client.get_layer_weights(i) 
+#                              for i in range(len(client.model.layers))]
+#                 updates.append(all_weights)
+#                 client.check_stopping(loss)
+        
+#         if updates:
+#             agg_weights = self.aggregate_all(updates)
+#             for i, w in enumerate(agg_weights):
+#                 set_layer_weights(self.global_model, i, w)
+        
+#         # Evaluate
+#         mape_values = []
+#         for client in clients:
+#             for i, w in enumerate(global_weights):
+#                 client.set_layer_weights(i, w)
+#             res = client.evaluate()
+#             if len(res) >= 3 and not np.isinf(res[2]):
+#                 mape_values.append(res[2])
+        
+#         if mape_values:
+#             avg_mape = np.mean(mape_values)
+#             self.history['mape'].append(avg_mape)
+#             print(f"  Round {self.comm_round}: MAPE = {avg_mape:.2f}%")
+        
+#         stopped = sum(1 for c in clients if c.stopped)
+#         return stopped < 0.3 * len(clients)
+    
+#     def train(self, clients, num_rounds=20):
+#         for _ in range(num_rounds):
+#             if not self.do_round(clients):
+#                 break
+#         return self.history
+
 class FedAvgServer:
+    """
+    کلاس سرور برای روش سنتی FedAvg (تجمیع فدرال میانگین)
+    Federated Averaging Server
+    این کلاس برای مقایسه با روش ASLA استفاده می‌شود
+    در این روش ALL لایه‌ها (همه لایه‌های شبکه) تجمیع می‌شوند
+    """
+    
     def __init__(self, num_clients, quant_bits=32):
-        self.global_model = create_model()
-        self.num_clients = num_clients
-        self.quant_bits = quant_bits
-        self.comm_round = 0  # Changed from 'round' to 'comm_round'
-        self.history = {'mape': []}
+        """
+        سازنده کلاس - مقداردهی اولیه سرور FedAvg
+        
+        پارامترها:
+            num_clients: تعداد کلاینت‌ها (دستگاه‌های IoT)
+            quant_bits: تعداد بیت‌های کوانتیزاسیون (8, 16, 32)
+        """
+        self.global_model = create_model()  # ایجاد مدل سراسری (شامل ۳ لایه)
+        self.num_clients = num_clients      # تعداد کلاینت‌ها
+        self.quant_bits = quant_bits        # بیت‌های کوانتیزاسیون
+        self.comm_round = 0                 # شمارنده دورهای ارتباطی
+        self.history = {'mape': []}         # ذخیره تاریخچه خطا (MAPE)
     
     def aggregate_all(self, client_models):
+        """
+        تابع تجمیع FedAvg - تمام لایه‌ها را تجمیع می‌کند
+        این تفاوت اصلی با ASLA است که فقط یک لایه را تجمیع می‌کند
+        
+        فرمول: G_t = (1/K) * Σ_{i=1}^{K} W_{t,i}
+        (همه لایه‌ها به طور جداگانه میانگین گرفته می‌شوند)
+        
+        ورودی: لیست مدل‌های کامل دریافتی از کلاینت‌ها (همه لایه‌ها)
+        خروجی: وزن‌های تجمیع شده برای تمام لایه‌ها
+        """
         if not client_models:
             return None
-        num_layers = len(client_models[0])
-        aggregated = []
-        for layer_idx in range(num_layers):
-            layer_weights = [model[layer_idx] for model in client_models]
-            avg_layer = []
-            for i in range(len(layer_weights[0])):
-                avg_layer.append(np.mean([w[i] for w in layer_weights], axis=0))
-            aggregated.append(avg_layer)
-        return aggregated
-    
-    def do_round(self, clients, local_epochs=1, batch_size=300):  # Renamed method
-        self.comm_round += 1
         
-        # Save global weights
+        num_layers = len(client_models[0])  # تعداد لایه‌های شبکه (۳ لایه)
+        aggregated = []  # لیست برای ذخیره وزن‌های تجمیع شده هر لایه
+        
+        # برای هر لایه به ترتیب
+        for layer_idx in range(num_layers):
+            # جمع‌آوری وزن‌های این لایه از تمام کلاینت‌ها
+            layer_weights = [model[layer_idx] for model in client_models]
+            avg_layer = []  # وزن میانگین برای این لایه
+            
+            # برای هر پارامتر در این لایه (وزن‌ها و بایاس‌ها)
+            for i in range(len(layer_weights[0])):
+                # محاسبه میانگین: (1/K) * Σ W_i
+                avg_layer.append(np.mean([w[i] for w in layer_weights], axis=0))
+            
+            aggregated.append(avg_layer)  # افزودن لایه تجمیع شده به لیست
+        
+        return aggregated  # بازگشت تمام لایه‌های تجمیع شده
+    
+    def do_round(self, clients, local_epochs=1, batch_size=300):
+        """
+        اجرای یک دور کامل از یادگیری فدرال با روش FedAvg
+        
+        مراحل:
+        1. ارسال ALL لایه‌ها از سرور به کلاینت‌ها
+        2. آموزش محلی روی هر کلاینت
+        3. دریافت ALL لایه‌ها از کلاینت‌ها
+        4. تجمیع ALL لایه‌ها (با تابع aggregate_all)
+        5. ارزیابی مدل سراسری
+        
+        تفاوت با ASLA: اینجا همه لایه‌ها رد و بدل می‌شوند، نه فقط یک لایه
+        """
+        self.comm_round += 1  # افزایش شمارنده دور
+        
+        # مرحله ۱: ذخیره وزن‌های ALL لایه‌های مدل سراسری
         global_weights = [get_layer_weights(self.global_model, i) 
                          for i in range(len(self.global_model.layers))]
         
-        updates = []
+        updates = []  # لیست برای ذخیره به‌روزرسانی‌های کلاینت‌ها
+        
+        # مرحله ۲: ارسال به تمام کلاینت‌ها و دریافت به‌روزرسانی
         for client in clients:
+            # اگر کلاینت متوقف شده باشد، رد شدن از آن
             if client.stopped:
                 continue
             
-            # Set all global weights
+            # ارسال ALL لایه‌ها به کلاینت (برخلاف ASLA که فقط یک لایه می‌فرستد)
             for i, w in enumerate(global_weights):
                 client.set_layer_weights(i, w)
             
+            # مرحله ۳: آموزش محلی روی داده‌های کلاینت
             loss = client.train_local(local_epochs, batch_size)
             
+            # اگر آموزش موفق بود، ALL لایه‌ها را دریافت کن
             if loss is not None:
-                # Get all layer weights
+                # دریافت ALL لایه‌ها از کلاینت (برخلاف ASLA که فقط یک لایه می‌گیرد)
                 all_weights = [client.get_layer_weights(i) 
                              for i in range(len(client.model.layers))]
-                updates.append(all_weights)
-                client.check_stopping(loss)
+                updates.append(all_weights)  # ذخیره مدل کامل کلاینت
+                client.check_stopping(loss)  # بررسی شرط توقف
         
+        # مرحله ۴: تجمیع ALL لایه‌ها (فرمول FedAvg)
         if updates:
-            agg_weights = self.aggregate_all(updates)
+            agg_weights = self.aggregate_all(updates)  # ← تجمیع همه لایه‌ها
+            # به‌روزرسانی ALL لایه‌های مدل سراسری
             for i, w in enumerate(agg_weights):
                 set_layer_weights(self.global_model, i, w)
         
-        # Evaluate
+        # مرحله ۵: ارزیابی مدل سراسری روی همه کلاینت‌ها
         mape_values = []
         for client in clients:
+            # تنظیم ALL لایه‌های مدل سراسری روی کلاینت برای ارزیابی
             for i, w in enumerate(global_weights):
                 client.set_layer_weights(i, w)
-            res = client.evaluate()
+            res = client.evaluate()  # محاسبه خطا روی داده‌های تست
             if len(res) >= 3 and not np.isinf(res[2]):
-                mape_values.append(res[2])
+                mape_values.append(res[2])  # ذخیره MAPE
         
+        # محاسبه میانگین MAPE و ذخیره در تاریخچه
         if mape_values:
             avg_mape = np.mean(mape_values)
             self.history['mape'].append(avg_mape)
             print(f"  Round {self.comm_round}: MAPE = {avg_mape:.2f}%")
         
+        # بررسی شرط توقف: اگر بیش از ۳۰٪ کلاینت‌ها متوقف شده‌اند، پایان
         stopped = sum(1 for c in clients if c.stopped)
         return stopped < 0.3 * len(clients)
     
     def train(self, clients, num_rounds=20):
+        """
+        حلقه اصلی آموزش - اجرای چندین دور ارتباطی با روش FedAvg
+        
+        ورودی: لیست کلاینت‌ها، تعداد دورها
+        خروجی: تاریخچه خطا (MAPE) در هر دور
+        """
         for _ in range(num_rounds):
+            # هر دور یک مرحله do_round را اجرا کن
             if not self.do_round(clients):
-                break
-        return self.history
-
+                break  # اگر شرط توقف برقرار شد، متوقف کن
+        return self.history  # بازگشت تاریخچه خطاها
 # ============================================================================
 # PART 9: VISUALIZATION
 # ============================================================================
