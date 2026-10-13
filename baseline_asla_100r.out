@@ -1,0 +1,173 @@
+============================================================
+ASLA BASELINE (single-layer, no DP)
+============================================================
+============================================================
+FILE STRUCTURE ANALYSIS
+============================================================
+
+📁 AEP_hourly.csv
+   Columns: ['Datetime', 'AEP_MW']
+----------------------------------------
+
+📁 COMED_hourly.csv
+   Columns: ['Datetime', 'COMED_MW']
+----------------------------------------
+
+📁 DAYTON_hourly.csv
+   Columns: ['Datetime', 'DAYTON_MW']
+----------------------------------------
+
+📁 DEOK_hourly.csv
+   Columns: ['Datetime', 'DEOK_MW']
+----------------------------------------
+
+📁 DOM_hourly.csv
+   Columns: ['Datetime', 'DOM_MW']
+----------------------------------------
+
+Scanning 13 CSV files...
+  ✓ AEP_hourly.csv -> 121273 readings
+  ✓ COMED_hourly.csv -> 66497 readings
+  ✓ DAYTON_hourly.csv -> 121275 readings
+  ✓ DEOK_hourly.csv -> 57739 readings
+  ✓ DOM_hourly.csv -> 116189 readings
+  ✓ DUQ_hourly.csv -> 119068 readings
+  ✓ EKPC_hourly.csv -> 45334 readings
+  ✓ FE_hourly.csv -> 62874 readings
+  ✓ NI_hourly.csv -> 58450 readings
+  ✓ PJME_hourly.csv -> 145366 readings
+  ✓ PJMW_hourly.csv -> 143206 readings
+  ✓ pjm_hourly_est.csv -> 121273 readings
+  ✓ PJM_Load_hourly.csv -> 32896 readings
+
+  ⚠️ کاهش نمونه‌ها از 32896 به 13896 (مطابق مقاله)
+
+✅ Loaded 13 clients, Data shape: (13896, 13)
+  client 0: AEP  train=9710  test=4162
+  client 1: COMED  train=9710  test=4162
+  client 2: DAYTON  train=9710  test=4162
+  client 3: DEOK  train=9710  test=4162
+  client 4: DOM  train=9710  test=4162
+  client 5: DUQ  train=9710  test=4162
+  client 6: EKPC  train=9710  test=4162
+  client 7: FE  train=9710  test=4162
+  client 8: NI  train=9710  test=4162
+  client 9: PJME  train=9710  test=4162
+
+  clients used     : 10
+  selected layer   : model.layers[1] = layer2 (5050 params)
+  quantization     : 32-bit
+  rounds requested : 100
+  local epochs     : 1   batch size: 300   optimizer: Adam(1e-3)
+  evaluation       : MAPE (unweighted mean over clients); MAE not reported
+  note             : MAPE is a personalised-hybrid metric (docstring, B5)
+  Round 1: MAPE = 99.97%
+  Round 2: MAPE = 99.90%
+  Round 3: MAPE = 99.70%
+  Round 4: MAPE = 99.17%
+  Round 5: MAPE = 97.99%
+  Round 6: MAPE = 95.60%
+  Round 7: MAPE = 91.28%
+  Round 8: MAPE = 84.57%
+  Round 9: MAPE = 77.39%
+  Round 10: MAPE = 71.98%
+  Round 11: MAPE = 67.51%
+  Round 12: MAPE = 62.85%
+  Round 13: MAPE = 57.99%
+  Round 14: MAPE = 53.22%
+  Round 15: MAPE = 48.74%
+  Round 16: MAPE = 44.79%
+  Round 17: MAPE = 41.48%
+  Round 18: MAPE = 38.71%
+  Round 19: MAPE = 36.31%
+  Round 20: MAPE = 34.17%
+  Round 21: MAPE = 32.26%
+  Round 22: MAPE = 30.55%
+  Round 23: MAPE = 29.02%
+  Round 24: MAPE = 27.65%
+  Round 25: MAPE = 26.42%
+  Round 26: MAPE = 25.33%
+  Round 27: MAPE = 24.36%
+  Round 28: MAPE = 23.48%
+  Round 29: MAPE = 22.68%
+  Round 30: MAPE = 21.93%
+  Round 31: MAPE = 21.22%
+  Round 32: MAPE = 20.51%
+  Round 33: MAPE = 19.82%
+  Round 34: MAPE = 19.13%
+  Round 35: MAPE = 18.45%
+  Round 36: MAPE = 17.77%
+  Round 37: MAPE = 17.10%
+  Round 38: MAPE = 16.43%
+  Round 39: MAPE = 15.77%
+  Round 40: MAPE = 15.11%
+  Round 41: MAPE = 14.47%
+  Round 42: MAPE = 13.83%
+  Round 43: MAPE = 13.21%
+  Round 44: MAPE = 12.60%
+  Round 45: MAPE = 12.00%
+  Round 46: MAPE = 11.43%
+  Round 47: MAPE = 10.88%
+  Round 48: MAPE = 10.36%
+  Round 49: MAPE = 9.86%
+  Round 50: MAPE = 9.40%
+  Round 51: MAPE = 8.97%
+  Round 52: MAPE = 8.57%
+  Round 53: MAPE = 8.19%
+  Round 54: MAPE = 7.85%
+  Round 55: MAPE = 7.53%
+  Round 56: MAPE = 7.23%
+  Round 57: MAPE = 6.96%
+  Round 58: MAPE = 6.70%
+  Round 59: MAPE = 6.47%
+  Round 60: MAPE = 6.25%
+  Round 61: MAPE = 6.06%
+  Round 62: MAPE = 5.87%
+  Round 63: MAPE = 5.70%
+  Round 64: MAPE = 5.55%
+  Round 65: MAPE = 5.41%
+  Round 66: MAPE = 5.28%
+  Round 67: MAPE = 5.15%
+  Round 68: MAPE = 5.04%
+  Round 69: MAPE = 4.93%
+  Round 70: MAPE = 4.83%
+  Round 71: MAPE = 4.74%
+  Round 72: MAPE = 4.65%
+  Round 73: MAPE = 4.56%
+  Round 74: MAPE = 4.48%
+  Round 75: MAPE = 4.40%
+  Round 76: MAPE = 4.33%
+  Round 77: MAPE = 4.26%
+  Round 78: MAPE = 4.19%
+  Round 79: MAPE = 4.13%
+  Round 80: MAPE = 4.07%
+  Round 81: MAPE = 4.02%
+  Round 82: MAPE = 3.97%
+  Round 83: MAPE = 3.92%
+  Round 84: MAPE = 3.88%
+  Round 85: MAPE = 3.84%
+  Round 86: MAPE = 3.80%
+  Round 87: MAPE = 3.77%
+  Round 88: MAPE = 3.73%
+  Round 89: MAPE = 3.70%
+  Round 90: MAPE = 3.67%
+  Round 91: MAPE = 3.65%
+  Round 92: MAPE = 3.62%
+  Round 93: MAPE = 3.60%
+  Round 94: MAPE = 3.58%
+  Round 95: MAPE = 3.56%
+  Round 96: MAPE = 3.54%
+  Round 97: MAPE = 3.52%
+  Round 98: MAPE = 3.51%
+  Round 99: MAPE = 3.49%
+  Round 100: MAPE = 3.48%
+
+============================================================
+ASLA BASELINE RESULTS
+============================================================
+  rounds requested : 100
+  rounds completed : 100
+  final MAPE       : 3.48%
+  best  MAPE       : 3.48% (round 100)
+  last 5 MAPE      : 3.54, 3.52, 3.51, 3.49, 3.48
+  note             : personalised-hybrid metric, not a single global model (B5)

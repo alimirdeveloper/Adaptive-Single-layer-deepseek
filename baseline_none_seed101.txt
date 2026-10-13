@@ -1,0 +1,23 @@
+============================================================
+ASLA BASELINE RESULTS (Stage 1B)
+============================================================
+  data folder        : D:\proposal\Adaptive-Single-layer-deepseek
+  selected clients   : AEP, COMED, DAYTON, DEOK, DOM, DUQ, EKPC, FE, NI, PJME
+  selected layer     : model.layers[1] = layer2 (5050 params)
+  quantization       : 32-bit
+  client-side DP     : method=none, clip=0.0, sigma=0.0 (OFF)
+  DP scope           : per-round local mechanism only - no
+                       end-to-end privacy accounting.
+  local epochs=1, batch size=300, optimizer=Adam(1e-3)
+  rounds requested   : 100
+  rounds completed   : 100
+  final MAPE         : 3.49%
+  best  MAPE         : 3.49% (round 100)
+  last 5 MAPE        : 3.57, 3.55, 3.53, 3.51, 3.49
+  final MAE          : 367.2338
+  fresh clients/round: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
+  note               : MAPE/MAE are the mean over personalised-hybrid
+                       client models (B5), NOT one fully global model.
+  known limitation   : B3 - NaNs are dropped before the lag features
+                       are built, so prev_day/prev_week may not be
+                       exactly 24 / 168 hours back.

@@ -1,0 +1,203 @@
+============================================================
+ASLA BASELINE (single-layer, DP: none)
+============================================================
+============================================================
+FILE STRUCTURE ANALYSIS
+============================================================
+
+📁 AEP_hourly.csv
+   Columns: ['Datetime', 'AEP_MW']
+----------------------------------------
+
+📁 COMED_hourly.csv
+   Columns: ['Datetime', 'COMED_MW']
+----------------------------------------
+
+📁 DAYTON_hourly.csv
+   Columns: ['Datetime', 'DAYTON_MW']
+----------------------------------------
+
+📁 DEOK_hourly.csv
+   Columns: ['Datetime', 'DEOK_MW']
+----------------------------------------
+
+📁 DOM_hourly.csv
+   Columns: ['Datetime', 'DOM_MW']
+----------------------------------------
+
+Scanning 13 CSV files...
+  sorted AEP_hourly.csv ascending by 'Datetime'
+  ✓ AEP_hourly.csv -> 121273 readings
+  sorted COMED_hourly.csv ascending by 'Datetime'
+  ✓ COMED_hourly.csv -> 66497 readings
+  sorted DAYTON_hourly.csv ascending by 'Datetime'
+  ✓ DAYTON_hourly.csv -> 121275 readings
+  sorted DEOK_hourly.csv ascending by 'Datetime'
+  ✓ DEOK_hourly.csv -> 57739 readings
+  sorted DOM_hourly.csv ascending by 'Datetime'
+  ✓ DOM_hourly.csv -> 116189 readings
+  sorted DUQ_hourly.csv ascending by 'Datetime'
+  ✓ DUQ_hourly.csv -> 119068 readings
+  sorted EKPC_hourly.csv ascending by 'Datetime'
+  ✓ EKPC_hourly.csv -> 45334 readings
+  sorted FE_hourly.csv ascending by 'Datetime'
+  ✓ FE_hourly.csv -> 62874 readings
+  sorted NI_hourly.csv ascending by 'Datetime'
+  ✓ NI_hourly.csv -> 58450 readings
+  sorted PJME_hourly.csv ascending by 'Datetime'
+  ✓ PJME_hourly.csv -> 145366 readings
+  sorted PJMW_hourly.csv ascending by 'Datetime'
+  ✓ PJMW_hourly.csv -> 143206 readings
+  sorted PJM_Load_hourly.csv ascending by 'Datetime'
+  ✓ PJM_Load_hourly.csv -> 32896 readings
+  sorted pjm_hourly_est.csv ascending by 'Datetime'
+  ✓ pjm_hourly_est.csv -> 121273 readings
+
+  ⚠️ کاهش نمونه‌ها از 32896 به 13896 (مطابق مقاله)
+
+✅ Loaded 13 clients, Data shape: (13896, 13)
+  client 0: AEP  train=9609  test=4119
+  client 1: COMED  train=9609  test=4119
+  client 2: DAYTON  train=9609  test=4119
+  client 3: DEOK  train=9609  test=4119
+  client 4: DOM  train=9609  test=4119
+  client 5: DUQ  train=9609  test=4119
+  client 6: EKPC  train=9609  test=4119
+  client 7: FE  train=9609  test=4119
+  client 8: NI  train=9609  test=4119
+  client 9: PJME  train=9609  test=4119
+
+  selected clients (10, sorted): AEP, COMED, DAYTON, DEOK, DOM, DUQ, EKPC, FE, NI, PJME
+
+  clients used     : 10
+  selected layer   : model.layers[1] = layer2 (5050 params)
+  quantization     : 32-bit
+  rounds requested : 100
+  local epochs     : 1   batch size: 300   optimizer: Adam(1e-3)
+  evaluation       : mean client-level MAPE and MAE (Stage 1B)
+  note             : MAPE is a personalised-hybrid metric (docstring, B5)
+  Round 1: MAPE = 99.97% (10 clients)
+  Round 2: MAPE = 99.89% (10 clients)
+  Round 3: MAPE = 99.69% (10 clients)
+  Round 4: MAPE = 99.19% (10 clients)
+  Round 5: MAPE = 98.06% (10 clients)
+  Round 6: MAPE = 95.80% (10 clients)
+  Round 7: MAPE = 91.77% (10 clients)
+  Round 8: MAPE = 85.58% (10 clients)
+  Round 9: MAPE = 78.61% (10 clients)
+  Round 10: MAPE = 72.61% (10 clients)
+  Round 11: MAPE = 67.19% (10 clients)
+  Round 12: MAPE = 61.96% (10 clients)
+  Round 13: MAPE = 56.80% (10 clients)
+  Round 14: MAPE = 51.87% (10 clients)
+  Round 15: MAPE = 47.59% (10 clients)
+  Round 16: MAPE = 44.08% (10 clients)
+  Round 17: MAPE = 41.14% (10 clients)
+  Round 18: MAPE = 38.58% (10 clients)
+  Round 19: MAPE = 36.32% (10 clients)
+  Round 20: MAPE = 34.33% (10 clients)
+  Round 21: MAPE = 32.58% (10 clients)
+  Round 22: MAPE = 31.01% (10 clients)
+  Round 23: MAPE = 29.61% (10 clients)
+  Round 24: MAPE = 28.34% (10 clients)
+  Round 25: MAPE = 27.18% (10 clients)
+  Round 26: MAPE = 26.12% (10 clients)
+  Round 27: MAPE = 25.14% (10 clients)
+  Round 28: MAPE = 24.21% (10 clients)
+  Round 29: MAPE = 23.34% (10 clients)
+  Round 30: MAPE = 22.51% (10 clients)
+  Round 31: MAPE = 21.72% (10 clients)
+  Round 32: MAPE = 20.94% (10 clients)
+  Round 33: MAPE = 20.19% (10 clients)
+  Round 34: MAPE = 19.46% (10 clients)
+  Round 35: MAPE = 18.75% (10 clients)
+  Round 36: MAPE = 18.06% (10 clients)
+  Round 37: MAPE = 17.39% (10 clients)
+  Round 38: MAPE = 16.74% (10 clients)
+  Round 39: MAPE = 16.10% (10 clients)
+  Round 40: MAPE = 15.48% (10 clients)
+  Round 41: MAPE = 14.88% (10 clients)
+  Round 42: MAPE = 14.29% (10 clients)
+  Round 43: MAPE = 13.72% (10 clients)
+  Round 44: MAPE = 13.17% (10 clients)
+  Round 45: MAPE = 12.63% (10 clients)
+  Round 46: MAPE = 12.12% (10 clients)
+  Round 47: MAPE = 11.63% (10 clients)
+  Round 48: MAPE = 11.16% (10 clients)
+  Round 49: MAPE = 10.71% (10 clients)
+  Round 50: MAPE = 10.29% (10 clients)
+  Round 51: MAPE = 9.89% (10 clients)
+  Round 52: MAPE = 9.51% (10 clients)
+  Round 53: MAPE = 9.15% (10 clients)
+  Round 54: MAPE = 8.81% (10 clients)
+  Round 55: MAPE = 8.49% (10 clients)
+  Round 56: MAPE = 8.19% (10 clients)
+  Round 57: MAPE = 7.90% (10 clients)
+  Round 58: MAPE = 7.63% (10 clients)
+  Round 59: MAPE = 7.37% (10 clients)
+  Round 60: MAPE = 7.14% (10 clients)
+  Round 61: MAPE = 6.91% (10 clients)
+  Round 62: MAPE = 6.71% (10 clients)
+  Round 63: MAPE = 6.52% (10 clients)
+  Round 64: MAPE = 6.34% (10 clients)
+  Round 65: MAPE = 6.17% (10 clients)
+  Round 66: MAPE = 6.02% (10 clients)
+  Round 67: MAPE = 5.87% (10 clients)
+  Round 68: MAPE = 5.73% (10 clients)
+  Round 69: MAPE = 5.59% (10 clients)
+  Round 70: MAPE = 5.47% (10 clients)
+  Round 71: MAPE = 5.34% (10 clients)
+  Round 72: MAPE = 5.23% (10 clients)
+  Round 73: MAPE = 5.12% (10 clients)
+  Round 74: MAPE = 5.01% (10 clients)
+  Round 75: MAPE = 4.91% (10 clients)
+  Round 76: MAPE = 4.81% (10 clients)
+  Round 77: MAPE = 4.71% (10 clients)
+  Round 78: MAPE = 4.62% (10 clients)
+  Round 79: MAPE = 4.53% (10 clients)
+  Round 80: MAPE = 4.44% (10 clients)
+  Round 81: MAPE = 4.36% (10 clients)
+  Round 82: MAPE = 4.28% (10 clients)
+  Round 83: MAPE = 4.20% (10 clients)
+  Round 84: MAPE = 4.13% (10 clients)
+  Round 85: MAPE = 4.06% (10 clients)
+  Round 86: MAPE = 3.99% (10 clients)
+  Round 87: MAPE = 3.93% (10 clients)
+  Round 88: MAPE = 3.87% (10 clients)
+  Round 89: MAPE = 3.81% (10 clients)
+  Round 90: MAPE = 3.76% (10 clients)
+  Round 91: MAPE = 3.72% (10 clients)
+  Round 92: MAPE = 3.68% (10 clients)
+  Round 93: MAPE = 3.64% (10 clients)
+  Round 94: MAPE = 3.61% (10 clients)
+  Round 95: MAPE = 3.58% (10 clients)
+  Round 96: MAPE = 3.55% (10 clients)
+  Round 97: MAPE = 3.53% (10 clients)
+  Round 98: MAPE = 3.51% (10 clients)
+  Round 99: MAPE = 3.49% (10 clients)
+  Round 100: MAPE = 3.48% (10 clients)
+============================================================
+ASLA BASELINE RESULTS (Stage 1B)
+============================================================
+  data folder        : D:\proposal\Adaptive-Single-layer-deepseek
+  selected clients   : AEP, COMED, DAYTON, DEOK, DOM, DUQ, EKPC, FE, NI, PJME
+  selected layer     : model.layers[1] = layer2 (5050 params)
+  quantization       : 32-bit
+  client-side DP     : method=none, clip=0.0, sigma=0.0 (OFF)
+  DP scope           : per-round local mechanism only - no
+                       end-to-end privacy accounting.
+  local epochs=1, batch size=300, optimizer=Adam(1e-3)
+  rounds requested   : 100
+  rounds completed   : 100
+  final MAPE         : 3.48%
+  best  MAPE         : 3.48% (round 100)
+  last 5 MAPE        : 3.55, 3.53, 3.51, 3.49, 3.48
+  final MAE          : 363.6126
+  fresh clients/round: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
+  note               : MAPE/MAE are the mean over personalised-hybrid
+                       client models (B5), NOT one fully global model.
+  known limitation   : B3 - NaNs are dropped before the lag features
+                       are built, so prev_day/prev_week may not be
+                       exactly 24 / 168 hours back.
+
+  results saved to   : D:\proposal\Adaptive-Single-layer-deepseek\baseline_100r_none.txt

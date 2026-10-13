@@ -14,6 +14,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import os
+import argparse
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -42,7 +43,10 @@ def inspect_file_structure(data_folder='.'):
 def load_pjm_multiple_files(data_folder='.'):
     """Load PJM data from multiple CSV files - مطابق با مقاله اصلی (۱۳۸۹۶ نمونه)"""
     client_data = {}
-    csv_files = [f for f in os.listdir(data_folder) if f.endswith('.csv')]
+    # B6 fix (Stage 1B): sort the discovered CSVs so the first `num_clients`
+    # eligible files - and therefore the client set - are identical on every
+    # machine. Selection criteria and the client count are unchanged.
+    csv_files = sorted(f for f in os.listdir(data_folder) if f.endswith('.csv'))
     print(f"\nScanning {len(csv_files)} CSV files...")
     
     for csv_file in csv_files:
@@ -50,7 +54,37 @@ def load_pjm_multiple_files(data_folder='.'):
         df = pd.read_csv(filepath)
         client_name = csv_file.replace('.csv', '').replace('_hourly', '')
         
+        # Stage 1C fix: the raw PJM files are NOT in chronological order (they
+        # are concatenated descending day-blocks), so the positional lags
+        # data[i-24] / data[i-168] did not mean "24 / 168 hours earlier".
+        # Sort rows by the timestamp column, ascending, BEFORE the load series
+        # is extracted and truncated. The sort key is a SEPARATE parsed Series
+        # (the raw column is left untouched) and dt_col is explicitly excluded
+        # from the load-column selection below, so the timestamp can never be
+        # mistaken for the load series. No resampling, interpolation or
+        # imputation is added here.
+        dt_col = None
         for col in df.columns:
+            if pd.to_numeric(df[col], errors='coerce').notna().mean() > 0.5:
+                continue  # numeric column -> a load/value column, not a timestamp
+            if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+                dt_col = col
+                break
+        if dt_col is not None:
+            # Stage 1C fix (v2): sort on a SEPARATE parsed key. Converting
+            # df[dt_col] in place made the timestamp column numeric (epoch
+            # integers), so the selector below picked 'Datetime' instead of
+            # '<REGION>_MW' and the targets became ~1e15 (MAE ~1e15, MAPE 100%).
+            order = pd.to_datetime(df[dt_col], errors='coerce') \
+                      .sort_values(kind='mergesort').index
+            df = df.loc[order].reset_index(drop=True)
+            print(f"  sorted {csv_file} ascending by '{dt_col}'")
+        else:
+            print(f"  WARNING {csv_file}: no timestamp column found - order unchanged")
+        
+        for col in df.columns:
+            if col == dt_col:
+                continue  # explicit: the timestamp is never a load series
             values = pd.to_numeric(df[col], errors='coerce').dropna()
             if len(values) > 1000:
                 client_data[client_name] = values.values
@@ -82,7 +116,7 @@ def load_pjm_multiple_files(data_folder='.'):
 def prepare_features(data, lookback=24):
     """Prepare features for load forecasting"""
     features, targets = [], []
-    for i in range(lookback, len(data)):
+    for i in range(max(lookback, 168), len(data)):
         prev_hour = data[i-1]
         prev_day = data[i-24] if i >= 24 else data[0]
         prev_week = data[i-168] if i >= 168 else data[0]
@@ -196,11 +230,177 @@ def quantize_weights(weights, bits=32):
     return quantize(weights)
 
 # ============================================================================
+# PART 5B: CLIENT-SIDE DIFFERENTIAL PRIVACY (opt-in, per-round)
+# ============================================================================
+
+def apply_dp_none(weights, clip, sigma):
+    """No-DP path: return the layer weights unchanged.
+
+    `clip` and `sigma` are accepted only so that every DP method shares the
+    same signature; they are deliberately ignored here.
+    """
+    return weights
+
+def apply_dp_gaussian(weights, clip, sigma, diag=None):
+    """Per-round local Gaussian mechanism on ONE layer's parameters.
+
+    flatten (kernel + bias -> one vector) -> global L2 clip to `clip` ->
+    add zero-mean Gaussian noise (std = sigma * clip) -> reshape back to the
+    original array shapes.
+
+    Disabled (weights returned unchanged) unless BOTH clip > 0.0 and
+    sigma > 0.0, which keeps the previous behaviour exactly.
+    Per-round LOCAL mechanism only - no end-to-end privacy accounting.
+
+    `diag` is the OPTIONAL diagnostics sink (opt-in via --dp-diagnostics).
+    When a dict is passed it is filled IN PLACE with the scalar norms of this
+    very update (raw/clipped/noise/noisy L2 and the clip factor), measured on
+    the same arrays that are returned. The noise vector is drawn once and only
+    once and is never regenerated for the sake of measurement, so the DP update
+    is bit-identical whether or not `diag` is supplied. With the default
+    `diag=None` not a single extra operation is performed.
+    """
+    if clip <= 0.0 or sigma <= 0.0:
+        return weights
+    shapes = [t.shape for t in weights]
+    flat = np.concatenate([t.reshape(-1) for t in weights])
+    norm = float(np.linalg.norm(flat))
+    clip_factor = 1.0
+    if norm > clip:
+        clip_factor = clip / norm
+        flat = flat * clip_factor
+    if diag is not None:
+        # Measured on the real vector, never assumed: clipped_delta_l2 is the
+        # actual norm of the array that is about to be noised.
+        diag['raw_delta_l2'] = norm
+        diag['clipped_delta_l2'] = float(np.linalg.norm(flat))
+        diag['clip_factor'] = float(clip_factor)
+    # The one and only noise draw. Keeping it in a named variable is what lets
+    # the diagnostics below measure the EXACT noise that is added, instead of
+    # generating a second noise vector.
+    noise = np.random.normal(0.0, sigma * clip, size=flat.shape)
+    flat = flat + noise
+    if diag is not None:
+        noise_l2 = float(np.linalg.norm(noise))
+        diag['noise_l2'] = noise_l2
+        diag['noisy_delta_l2'] = float(np.linalg.norm(flat))
+        # Undefined (None -> empty CSV cell) when the raw delta is exactly zero.
+        diag['noise_to_raw_delta_ratio'] = (noise_l2 / norm) if norm > 0.0 else None
+    parts, pos = [], 0
+    for shape in shapes:
+        n = int(np.prod(shape))
+        parts.append(flat[pos:pos + n].reshape(shape))
+        pos += n
+    return parts
+
+def apply_dp_clip_only(weights, clip, sigma=None):
+    """ABLATION MODE: global L2 clipping of one layer's delta, WITHOUT noise.
+
+    flatten (kernel + bias -> one vector) -> if the combined L2 norm exceeds
+    `clip`, scale the vector by clip / norm -> reshape back to the original
+    array shapes.
+
+    No noise is added and NO random number is drawn, so the NumPy RNG stream is
+    left exactly where it was: a clip_only run is reproducible from the seeds
+    alone and cannot perturb the stream the 'gaussian' arm relies on.
+    `clip <= 0` returns the input unchanged.
+
+    `sigma` is accepted and deliberately ignored, only so that every method in
+    DP_METHODS shares one call signature (same convention as apply_dp_none).
+
+    WARNING: this is a control arm for the ablation, NOT a privacy mechanism.
+    Clipping bounds the norm of an update but hides nothing: the clipped delta
+    is still transmitted, and scaling preserves its direction exactly. It
+    provides NO differential-privacy guarantee.
+    """
+    if clip <= 0.0:
+        return weights
+    shapes = [t.shape for t in weights]
+    flat = np.concatenate([t.reshape(-1) for t in weights])
+    norm = float(np.linalg.norm(flat))
+    if norm > clip:
+        clip_factor = clip / norm
+        flat = flat * clip_factor
+    parts, pos = [], 0
+    for shape in shapes:
+        n = int(np.prod(shape))
+        parts.append(flat[pos:pos + n].reshape(shape))
+        pos += n
+    return parts
+
+# Registry of the supported client-side DP methods (default: 'none').
+DP_METHODS = {
+    'none': apply_dp_none,
+    'gaussian': apply_dp_gaussian,
+    'clip_only': apply_dp_clip_only,
+}
+
+def get_dp_method(name):
+    """Select a client-side DP function by name (unknown/None -> 'none')."""
+    return DP_METHODS.get(name, apply_dp_none)
+
+# ----------------------------------------------------------------------------
+# PART 5C: OPTIONAL GAUSSIAN-DP DIAGNOSTICS (opt-in, default OFF)
+# ----------------------------------------------------------------------------
+# Scalars recorded for EVERY client update, in CSV column order. Only norms and
+# identifiers are stored - never weights, deltas, gradients or any other
+# parameter value.
+DP_DIAGNOSTICS_HEADER = ('round', 'client_id', 'layer_index', 'raw_delta_l2',
+                         'clipped_delta_l2', 'noise_l2', 'noisy_delta_l2',
+                         'clip_factor', 'noise_to_raw_delta_ratio')
+
+def dp_diagnostics_active(dp_method, dp_clip, dp_sigma):
+    """True only when there is an active client-side DP method to observe.
+
+    Mirrors the rule used by the console banner and the report: 'gaussian' is in
+    effect only with BOTH clip and sigma positive. 'clip_only' is in effect with
+    a positive clip bound alone, because it adds no noise by design (its noise
+    columns are recorded as zero). Everything else has nothing to observe.
+    """
+    if dp_method == 'clip_only':
+        return dp_clip > 0.0
+    return dp_method == 'gaussian' and dp_clip > 0.0 and dp_sigma > 0.0
+
+def unique_output_path(path):
+    """Return `path`, or a `_1`/`_2`/... sibling if `path` already exists.
+
+    Diagnostics must never overwrite an existing file silently, so an existing
+    target is never reused; the caller reports the name that was chosen.
+    """
+    if not os.path.exists(path):
+        return path
+    stem, ext = os.path.splitext(path)
+    n = 1
+    while os.path.exists(f"{stem}_{n}{ext}"):
+        n += 1
+    return f"{stem}_{n}{ext}"
+
+def format_dp_diagnostics_row(row):
+    """Render one diagnostics dict as a CSV line (scalars only).
+
+    Every field is an int, a float or None, so no quoting is ever required and
+    the writer stays dependency-free (the stdlib `csv` module is not imported).
+    Floats use repr() so the written value round-trips exactly.
+    """
+    cells = []
+    for key in DP_DIAGNOSTICS_HEADER:
+        value = row.get(key)
+        if value is None:
+            cells.append('')
+        elif isinstance(value, float):
+            cells.append(repr(value))
+        else:
+            cells.append(str(value))
+    return ','.join(cells)
+
+# ============================================================================
 # PART 6: FEDERATED CLIENT
 # ============================================================================
 
 class FederatedClient:
-    def __init__(self, client_id, X_train, y_train, X_test, y_test, name="", quant_bits=32):
+    def __init__(self, client_id, X_train, y_train, X_test, y_test, name="", quant_bits=32,
+                 dp_clip=0.0, dp_sigma=0.0, dp_method='none',
+                 dp_diagnostics=False):
         self.client_id = client_id
         self.name = name
         self.X_train = X_train
@@ -209,6 +409,28 @@ class FederatedClient:
         self.y_test = y_test
         self.model = create_model()
         self.quant_bits = quant_bits
+        # Client-side DP (opt-in). The method is chosen by name; the default
+        # 'none' leaves the transmitted weights unchanged:
+        #   dp_method = 'none' | 'gaussian' | 'clip_only'
+        #               (see DP_METHODS / get_dp_method)
+        #   dp_clip   = global L2 clipping bound C on the DELTA of the selected
+        #               layer (delta = local_weights - round reference G)
+        #   dp_sigma  = noise multiplier; added noise std = dp_sigma * C
+        self.dp_method = dp_method
+        self.dp_clip = dp_clip
+        self.dp_sigma = dp_sigma
+        # Round reference G for the 'gaussian' method, keyed by layer index and
+        # filled by set_layer_weights with an INDEPENDENT copy. The 'none'
+        # method never reads it and never fills it.
+        self.received_layer_weights = {}
+        # Optional DP diagnostics (opt-in, default OFF). When disabled nothing
+        # is collected and nothing is measured: dp_diag_rows stays empty and
+        # apply_dp_gaussian is called without a diagnostics sink.
+        self.dp_diagnostics = dp_diagnostics
+        self.dp_diag_rows = []
+        # Communication round of the update currently being produced, tagged by
+        # ASLAServer.do_round (None when diagnostics are not in use).
+        self.dp_diag_round = None
         self.stopped = False
         self.last_update = None
         self.best_loss = float('inf')
@@ -228,10 +450,116 @@ class FederatedClient:
     
     def get_layer_weights(self, layer_idx):
         w = get_layer_weights(self.model, layer_idx)
+        # Client-side DP (opt-in) on the selected layer, i.e. exactly the
+        # parameters that are sent to the server.
+        #   'none' (default) - returns `w` unchanged (apply_dp_none is an
+        #       identity), so this path is identical to the non-DP baseline.
+        #   'gaussian' - ACTIVE only when both dp_clip and dp_sigma are positive
+        #       (the same rule as the console banner and the report). It noises
+        #       the DELTA against the round reference G (the layer the server
+        #       sent at the START of this round), then adds the noised delta back
+        #       to G. The returned value therefore stays ABSOLUTE and the
+        #       server's mean-of-weights aggregation stays mathematically
+        #       correct: mean_i(G + d~_i) = G + mean_i(d~_i).
+        #       When it is NOT active (dp_clip <= 0 or dp_sigma <= 0) the
+        #       ORIGINAL local weights go straight to the quantization path
+        #       below: no delta is computed and no G + delta is reconstructed, so
+        #       the result is bit-identical to the 'none' path, not merely close.
+        #   'clip_only' - ABLATION arm, active whenever dp_clip is positive
+        #       (dp_sigma is ignored). Same delta definition and same global L2
+        #       clipping as 'gaussian', but NO noise is added and no random
+        #       number is consumed, so the RNG stream is the one a 'none' run
+        #       would have. Clipping alone is NOT a privacy guarantee: the
+        #       clipped delta is still sent and keeps its direction.
+        #       When it is NOT active (dp_clip <= 0) the ORIGINAL local weights
+        #       go straight to the quantization path below, bit-identical to the
+        #       'none' path.
+        #   Optional diagnostics (--dp-diagnostics, default OFF) only MEASURE
+        #       that same delta and that same noise; they never change the
+        #       update, the clipping or the number of random draws.
+        if self.dp_method == 'gaussian':
+            if self.dp_clip > 0.0 and self.dp_sigma > 0.0:
+                ref = self.received_layer_weights.get(layer_idx)
+                if ref is None:
+                    raise RuntimeError(
+                        f"client-side DP method 'gaussian' requires the round "
+                        f"reference weights for layer {layer_idx}, but none were "
+                        f"received (set_layer_weights was never called for this "
+                        f"layer). Refusing to silently noise the absolute weights "
+                        f"instead.")
+                delta = [a - b for a, b in zip(w, ref)]
+                if self.dp_diagnostics:
+                    # Diagnostics ON: collect scalars measured from the SAME
+                    # delta and the SAME noise the update uses. The sink dict is
+                    # filled in place by apply_dp_gaussian.
+                    diag = {}
+                    delta = apply_dp_gaussian(delta, self.dp_clip,
+                                              self.dp_sigma, diag=diag)
+                    diag['round'] = self.dp_diag_round
+                    diag['client_id'] = self.client_id
+                    diag['layer_index'] = layer_idx
+                    self.dp_diag_rows.append(diag)
+                else:
+                    # Diagnostics OFF (default): the original call, unchanged.
+                    delta = apply_dp_gaussian(delta, self.dp_clip, self.dp_sigma)
+                w = [a + b for a, b in zip(ref, delta)]
+        elif self.dp_method == 'clip_only':
+            # ABLATION ARM: the same delta definition and the same global L2
+            # clipping as the 'gaussian' method, but NO noise is added and no
+            # random number is consumed, so the NumPy RNG stream stays exactly
+            # the one a 'none' run would have. Clipping alone is NOT a privacy
+            # guarantee: the clipped delta is still transmitted, and scaling
+            # preserves its direction exactly.
+            if self.dp_clip > 0.0:
+                ref = self.received_layer_weights.get(layer_idx)
+                if ref is None:
+                    raise RuntimeError(
+                        f"client-side DP method 'clip_only' requires the round "
+                        f"reference weights for layer {layer_idx}, but none were "
+                        f"received (set_layer_weights was never called for this "
+                        f"layer). Refusing to silently clip the absolute weights "
+                        f"instead.")
+                delta = [a - b for a, b in zip(w, ref)]
+                if self.dp_diagnostics:
+                    # Measured on the real delta, before clipping. No random
+                    # number is drawn anywhere in this branch.
+                    raw_l2 = float(np.linalg.norm(
+                        np.concatenate([d.reshape(-1) for d in delta])))
+                delta = apply_dp_clip_only(delta, self.dp_clip)
+                if self.dp_diagnostics:
+                    clipped_l2 = float(np.linalg.norm(
+                        np.concatenate([d.reshape(-1) for d in delta])))
+                    self.dp_diag_rows.append({
+                        'round': self.dp_diag_round,
+                        'client_id': self.client_id,
+                        'layer_index': layer_idx,
+                        'raw_delta_l2': raw_l2,
+                        'clipped_delta_l2': clipped_l2,
+                        # This arm adds no noise at all.
+                        'noise_l2': 0.0,
+                        'noisy_delta_l2': clipped_l2,
+                        # Same definition as the Gaussian arm: the multiplier
+                        # actually applied to the original delta.
+                        'clip_factor': (self.dp_clip / raw_l2
+                                        if raw_l2 > self.dp_clip else 1.0),
+                        # 0 / raw is 0 when raw > 0; undefined (empty cell) at 0.
+                        'noise_to_raw_delta_ratio': (0.0 if raw_l2 > 0.0
+                                                     else None),
+                    })
+                w = [a + b for a, b in zip(ref, delta)]
+        else:
+            w = get_dp_method(self.dp_method)(w, self.dp_clip, self.dp_sigma)
         return quantize_weights(w, self.quant_bits) if self.quant_bits < 32 else w
     
     def set_layer_weights(self, layer_idx, weights):
         set_layer_weights(self.model, layer_idx, weights)
+        # Keep the round reference G for the 'gaussian' / 'clip_only' methods as
+        # an INDEPENDENT copy, so that later in-place updates of the arrays
+        # cannot corrupt the reference. The 'none' method never reads it and pays
+        # nothing for it.
+        if self.dp_method in ('gaussian', 'clip_only'):
+            self.received_layer_weights[layer_idx] = [np.array(w, copy=True)
+                                                      for w in weights]
     
     def check_stopping(self, loss, patience=5, min_delta=1e-6):
         if loss is None:
@@ -245,74 +573,6 @@ class FederatedClient:
                 self.stopped = True
         return self.stopped
 
-# ============================================================================
-# PART 7: ASLA SERVER (Single Layer Aggregation)
-# ============================================================================
-
-# class ASLAServer:
-#     def __init__(self, num_clients, agg_layer=1, quant_bits=32):
-#         self.global_model = create_model()
-#         self.num_clients = num_clients
-#         self.agg_layer = agg_layer
-#         self.quant_bits = quant_bits
-#         self.comm_round = 0  # Changed from 'round' to 'comm_round'
-#         self.history = {'mape': []}
-    
-#     def aggregate(self, client_weights):
-#         if not client_weights:
-#             return None
-#         avg_weights = []
-#         # For each layer (but only ONE layer is passed!)
-#         for i in range(len(client_weights[0])):
-#             # Sum all client weights for this layer
-#             avg_weights.append(np.mean([w[i] for w in client_weights], axis=0))
-#         return avg_weights
-    
-#     def do_round(self, clients, local_epochs=1, batch_size=300):  # Renamed method
-#         self.comm_round += 1
-#         global_weights = get_layer_weights(self.global_model, self.agg_layer)
-        
-#         updates = []
-#         for client in clients:
-#             if client.stopped:
-#                 if client.last_update:
-#                     updates.append(client.last_update)
-#                 continue
-            
-#             client.set_layer_weights(self.agg_layer, global_weights)
-#             loss = client.train_local(local_epochs, batch_size)
-            
-#             if loss is not None:
-#                 updates.append(client.get_layer_weights(self.agg_layer))
-#                 client.last_update = updates[-1]
-#                 client.check_stopping(loss)
-        
-#         if updates:
-#             agg_weights = self.aggregate(updates)
-#             set_layer_weights(self.global_model, self.agg_layer, agg_weights)
-        
-#         # Evaluate
-#         mape_values = []
-#         for client in clients:
-#             client.set_layer_weights(self.agg_layer, 
-#                 get_layer_weights(self.global_model, self.agg_layer))
-#             res = client.evaluate()
-#             if len(res) >= 3 and not np.isinf(res[2]):
-#                 mape_values.append(res[2])
-        
-#         if mape_values:
-#             avg_mape = np.mean(mape_values)
-#             self.history['mape'].append(avg_mape)
-#             print(f"  Round {self.comm_round}: MAPE = {avg_mape:.2f}%")
-        
-#         stopped = sum(1 for c in clients if c.stopped)
-#         return stopped < 0.3 * len(clients)
-    
-#     def train(self, clients, num_rounds=20):
-#         for _ in range(num_rounds):
-#             if not self.do_round(clients):
-#                 break
-#         return self.history
 
 class ASLAServer:
     """
@@ -335,7 +595,9 @@ class ASLAServer:
         self.agg_layer = agg_layer          # لایه انتخاب شده برای تجمیع
         self.quant_bits = quant_bits        # بیت‌های کوانتیزاسیون
         self.comm_round = 0                 # شمارنده دورهای ارتباطی
-        self.history = {'mape': []}         # ذخیره تاریخچه خطا (MAPE)
+        # Stage 1B: record the execution facts needed for a trustworthy baseline.
+        # 'participants' = fresh clients that actually trained in that round.
+        self.history = {'mape': [], 'mae': [], 'participants': []}
     
     def aggregate(self, client_weights):
         """
@@ -380,13 +642,21 @@ class ASLAServer:
         # مرحله ۲: ارسال به تمام کلاینت‌ها و دریافت به‌روزرسانی
         for client in clients:
             # اگر کلاینت متوقف شده باشد، آخرین به‌روزرسانی را استفاده کن
+            # B2 fix: stopped clients are excluded from aggregation entirely.
+            # (The comment on the line above is now STALE - it described the old
+            # behaviour of re-injecting the cached update.)
+            # Re-injecting the cached `last_update` (an absolute weight vector
+            # from an older round) biased np.mean toward a stale model and
+            # silently changed the effective participation count.
             if client.stopped:
-                if client.last_update:
-                    updates.append(client.last_update)
                 continue
             
             # ارسال لایه انتخاب شده به کلاینت (فقط یک لایه!)
             client.set_layer_weights(self.agg_layer, global_weights)
+            # DP diagnostics (inert unless enabled): tag this client's update
+            # with the current communication round. Assigning an attribute has
+            # no numerical effect on training or on the RNG sequence.
+            client.dp_diag_round = self.comm_round
             
             # مرحله ۳: آموزش محلی روی داده‌های کلاینت
             loss = client.train_local(local_epochs, batch_size)
@@ -402,12 +672,20 @@ class ASLAServer:
                 client.check_stopping(loss)  # بررسی شرط توقف
         
         # مرحله ۴: تجمیع فقط یک لایه (فرمول اصلی ASLA!)
-        if updates:
-            agg_weights = self.aggregate(updates)  # ← قلب ASLA اینجاست
-            set_layer_weights(self.global_model, self.agg_layer, agg_weights)
+        # Stage 1B guard: if no client produced a fresh update there is nothing
+        # to aggregate. Stop explicitly rather than crashing or silently logging
+        # the unchanged global model's MAPE as if it were this round's result.
+        if not updates:
+            print(f"  Round {self.comm_round}: no fresh client update - stopping")
+            return False
+        
+        agg_weights = self.aggregate(updates)  # ← قلب ASLA اینجاست
+        set_layer_weights(self.global_model, self.agg_layer, agg_weights)
+        n_participants = len(updates)  # Stage 1B: fresh clients contributing this round
         
         # مرحله ۵: ارزیابی مدل سراسری روی همه کلاینت‌ها
         mape_values = []
+        mae_values = []  # Stage 1B: MAE collected from the same evaluate() call
         for client in clients:
             # تنظیم لایه تجمیع شده روی کلاینت برای ارزیابی
             client.set_layer_weights(self.agg_layer, 
@@ -415,12 +693,17 @@ class ASLAServer:
             res = client.evaluate()  # محاسبه خطا روی داده‌های تست
             if len(res) >= 3 and not np.isinf(res[2]):
                 mape_values.append(res[2])  # ذخیره MAPE
+            if len(res) >= 2 and not np.isinf(res[1]):
+                mae_values.append(res[1])   # Stage 1B: ذخیره MAE
         
-        # محاسبه میانگین MAPE و ذخیره در تاریخچه
+        # محاسبه میانگین MAPE/MAE و ذخیره در تاریخچه (Stage 1B: + participants)
         if mape_values:
             avg_mape = np.mean(mape_values)
             self.history['mape'].append(avg_mape)
-            print(f"  Round {self.comm_round}: MAPE = {avg_mape:.2f}%")
+            self.history['mae'].append(np.mean(mae_values) if mae_values else float('nan'))
+            self.history['participants'].append(n_participants)
+            print(f"  Round {self.comm_round}: MAPE = {avg_mape:.2f}% "
+                  f"({n_participants} clients)")
         
         # بررسی شرط توقف: اگر بیش از ۳۰٪ کلاینت‌ها متوقف شده‌اند، پایان
         stopped = sum(1 for c in clients if c.stopped)
@@ -438,83 +721,6 @@ class ASLAServer:
             if not self.do_round(clients):
                 break  # اگر شرط توقف برقرار شد، متوقف کن
         return self.history  # بازگشت تاریخچه خطاها
-# ============================================================================
-# PART 8: FEDAVG SERVER (All Layers Aggregation)
-# ============================================================================
-
-# class FedAvgServer:
-#     def __init__(self, num_clients, quant_bits=32):
-#         self.global_model = create_model()
-#         self.num_clients = num_clients
-#         self.quant_bits = quant_bits
-#         self.comm_round = 0  # Changed from 'round' to 'comm_round'
-#         self.history = {'mape': []}
-    
-#     def aggregate_all(self, client_models):
-#         if not client_models:
-#             return None
-#         num_layers = len(client_models[0])
-#         aggregated = []
-#         for layer_idx in range(num_layers):
-#             layer_weights = [model[layer_idx] for model in client_models]
-#             avg_layer = []
-#             for i in range(len(layer_weights[0])):
-#                 avg_layer.append(np.mean([w[i] for w in layer_weights], axis=0))
-#             aggregated.append(avg_layer)
-#         return aggregated
-    
-#     def do_round(self, clients, local_epochs=1, batch_size=300):  # Renamed method
-#         self.comm_round += 1
-        
-#         # Save global weights
-#         global_weights = [get_layer_weights(self.global_model, i) 
-#                          for i in range(len(self.global_model.layers))]
-        
-#         updates = []
-#         for client in clients:
-#             if client.stopped:
-#                 continue
-            
-#             # Set all global weights
-#             for i, w in enumerate(global_weights):
-#                 client.set_layer_weights(i, w)
-            
-#             loss = client.train_local(local_epochs, batch_size)
-            
-#             if loss is not None:
-#                 # Get all layer weights
-#                 all_weights = [client.get_layer_weights(i) 
-#                              for i in range(len(client.model.layers))]
-#                 updates.append(all_weights)
-#                 client.check_stopping(loss)
-        
-#         if updates:
-#             agg_weights = self.aggregate_all(updates)
-#             for i, w in enumerate(agg_weights):
-#                 set_layer_weights(self.global_model, i, w)
-        
-#         # Evaluate
-#         mape_values = []
-#         for client in clients:
-#             for i, w in enumerate(global_weights):
-#                 client.set_layer_weights(i, w)
-#             res = client.evaluate()
-#             if len(res) >= 3 and not np.isinf(res[2]):
-#                 mape_values.append(res[2])
-        
-#         if mape_values:
-#             avg_mape = np.mean(mape_values)
-#             self.history['mape'].append(avg_mape)
-#             print(f"  Round {self.comm_round}: MAPE = {avg_mape:.2f}%")
-        
-#         stopped = sum(1 for c in clients if c.stopped)
-#         return stopped < 0.3 * len(clients)
-    
-#     def train(self, clients, num_rounds=20):
-#         for _ in range(num_rounds):
-#             if not self.do_round(clients):
-#                 break
-#         return self.history
 
 
 class FedAvgServer:
@@ -578,8 +784,11 @@ class FedAvgServer:
         # Evaluate
         mape_values = []
         for client in clients:
-            for i, w in enumerate(global_weights):
-                client.set_layer_weights(i, w)
+            # B1 fix: evaluate the CURRENT aggregated global model instead of
+            # the pre-aggregation snapshot captured in `global_weights`, which
+            # made every logged FedAvg MAPE one round stale.
+            for i in range(len(self.global_model.layers)):
+                client.set_layer_weights(i, get_layer_weights(self.global_model, i))
             res = client.evaluate()
             if len(res) >= 3 and not np.isinf(res[2]):
                 mape_values.append(res[2])
@@ -807,9 +1016,274 @@ def run_experiment(data_folder='.'):
     print(f"  • Memory saving (32-bit→8-bit): 75%")
     
     return layer_results, quant_results, fedavg_history, asla_history
-if __name__ == "__main__":
-    results = run_experiment(".")
+def run_asla_baseline(data_folder='.', num_rounds=100, agg_layer=1, quant_bits=32,
+                      num_clients=10, plot=False, out_file='baseline_asla_results.txt',
+                      dp_clip=0.0, dp_sigma=0.0, dp_method='none',
+                      dp_diagnostics=False,
+                      dp_diagnostics_out='dp_diagnostics.csv'):
+    """ASLA-only baseline (Stage 1 minimal-fix run).
+
+    Runs ONLY the single-layer ASLA baseline, skipping the layer sweep, the
+    quantization sweep, the FedAvg comparison and the blocking plt.show().
+
+    DECISION RECORDED (B5) - documented, not changed: only `agg_layer` is ever
+    aggregated, so the reported MAPE is the mean over K *personalised hybrid*
+    models (shared global selected layer + each client's own other layers),
+    NOT the error of one single global model, and not directly comparable to
+    FedAvg's metric. Left as-is because changing it would change the ASLA
+    method rather than fix a bug.
+
+    Documented only, not changed:
+      B3 - NaNs are dropped before the lag features are built, so prev_day /
+           prev_week may not be exactly 24 / 168 hours back.
+      B6 - the client set is the first `num_clients` entries of
+           os.listdir(data_folder); the selected names are printed.
+      B7 - per-client early stopping and the ">= 30% stopped" rule can end the
+           run before `num_rounds`; the completed round count is reported.
+      DP - client-side DP is opt-in via dp_method (default 'none' = OFF, so the
+           default path is identical to the non-DP baseline). Methods: 'none'
+           (apply_dp_none, returns the weights unchanged), 'gaussian'
+           (apply_dp_gaussian on the DELTA against the round reference G that
+           the server sent, parameterised by dp_clip / dp_sigma, both default
+           0.0; the noised delta is added back to G, so the client still returns
+           ABSOLUTE weights) and 'clip_only' (apply_dp_clip_only: the same delta
+           definition and the same global L2 clipping as 'gaussian', but with NO
+           noise and no random numbers consumed - an ablation control arm, NOT a
+           privacy mechanism and NOT a DP guarantee). 'gaussian' is a per-round
+           LOCAL mechanism on the transmitted layer only; no end-to-end privacy
+           accounting across rounds is implemented.
+      DP diagnostics - opt-in via dp_diagnostics (default False). It only makes
+           sense for an ACTIVE method ('gaussian', or 'clip_only' with a positive
+           clip bound); when enabled, the scalar norms of every client update
+           (raw/clipped/noise/noisy L2 and the clip factor; the noise columns are
+           0.0 in the clip_only arm) are appended to `dp_diagnostics_out` as
+           CSV. It is a measurement layer only: the DP update, the RNG sequence,
+           the clipping, the noise, the quantization and the aggregation are all
+           untouched, and with the flag off nothing extra is computed.
+    """
+    print("=" * 60)
+    # Console banner: the title must match the method actually in effect, so a
+    # DP run is never labelled as a no-DP run and the noise-free ablation is
+    # never labelled as Gaussian DP (same rule as the report below).
+    if dp_method == 'clip_only':
+        dp_label = 'clip-only (no noise)' if dp_clip > 0.0 else 'none'
+        dp_state = ('ON, clip-only - NO Gaussian noise' if dp_clip > 0.0
+                    else 'OFF')
+    elif dp_method == 'gaussian' and dp_clip > 0.0 and dp_sigma > 0.0:
+        dp_label = 'gaussian'
+        dp_state = 'ON'
+    else:
+        dp_label = 'none'
+        dp_state = 'OFF'
+    print(f"ASLA BASELINE (single-layer, DP: {dp_label})")
+    print("=" * 60)
+
+    inspect_file_structure(data_folder)
+    client_data, client_names = load_pjm_multiple_files(data_folder)
+
+    clients = []
+    for i, name in enumerate(client_names[:num_clients]):
+        X_train, X_test, y_train, y_test, _ = preprocess_client_data(client_data[:, i])
+        if X_train is not None and len(X_train) > 100:
+            clients.append(FederatedClient(i, X_train, y_train, X_test, y_test,
+                                           name, quant_bits, dp_clip, dp_sigma,
+                                           dp_method, dp_diagnostics))
+            print(f"  client {i}: {name}  train={len(X_train)}  test={len(X_test)}")
+
+    if not clients:
+        raise RuntimeError("No usable clients were built from the CSV files in "
+                           f"'{os.path.abspath(data_folder)}'")
+
+    # Stage 1B: log the deterministic client set so the run is reproducible.
+    print(f"\n  selected clients ({len(clients)}, sorted): "
+          + ", ".join(c.name for c in clients))
+
+    probe = create_model()
+    probe_layer = probe.layers[agg_layer]
+    layer_params = sum(w.size for w in probe_layer.get_weights())
+
+    print(f"\n  clients used     : {len(clients)}")
+    print(f"  selected layer   : model.layers[{agg_layer}] = {probe_layer.name} "
+          f"({layer_params} params)")
+    print(f"  quantization     : {quant_bits}-bit")
+    print(f"  rounds requested : {num_rounds}")
+    print("  local epochs     : 1   batch size: 300   optimizer: Adam(1e-3)")
+    print("  evaluation       : mean client-level MAPE and MAE (Stage 1B)")
+    print("  note             : MAPE is a personalised-hybrid metric (docstring, B5)")
+
+    # --- Optional DP diagnostics (opt-in; nothing happens when disabled) -----
+    # Only an ACTIVE DP method produces anything to measure ('gaussian', or the
+    # 'clip_only' ablation with a positive clip bound), so a request that cannot
+    # be honoured is explained once and then ignored: the training behaviour is
+    # left exactly as it is.
+    diag_out_path = None
+    if dp_diagnostics:
+        if dp_diagnostics_active(dp_method, dp_clip, dp_sigma):
+            diag_out_path = unique_output_path(dp_diagnostics_out)
+            print(f"  DP diagnostics   : ON -> {os.path.abspath(diag_out_path)}")
+        else:
+            what = ('clip_only arm' if dp_method == 'clip_only'
+                    else 'Gaussian mechanism')
+            print("  DP diagnostics   : requested but NOT possible - the "
+                  f"{what} is not active (method={dp_method}, "
+                  f"clip={dp_clip}, sigma={dp_sigma}); no CSV will be written "
+                  "and training is unchanged.")
+
+    server = ASLAServer(len(clients), agg_layer=agg_layer, quant_bits=quant_bits)
+    history = server.train(clients, num_rounds=num_rounds)
+
+    mape = history['mape']
+    mae = history.get('mae', [])
+    participants = history.get('participants', [])
+
+    report = []
+    report.append("=" * 60)
+    report.append("ASLA BASELINE RESULTS (Stage 1B)")
+    report.append("=" * 60)
+    report.append(f"  data folder        : {os.path.abspath(data_folder)}")
+    report.append(f"  selected clients   : {', '.join(c.name for c in clients)}")
+    report.append(f"  selected layer     : model.layers[{agg_layer}] = {probe_layer.name} "
+                  f"({layer_params} params)")
+    report.append(f"  quantization       : {quant_bits}-bit")
+    report.append(f"  client-side DP     : method={dp_method}, clip={dp_clip}, "
+                  f"sigma={dp_sigma} ({dp_state})")
+    report.append("  DP scope           : per-round local mechanism only - no")
+    report.append("                       end-to-end privacy accounting.")
+    if dp_method == 'clip_only' and dp_clip > 0.0:
+        report.append("  clip-only caveat   : this arm clips the update norm but")
+        report.append("                       adds NO noise and gives NO DP")
+        report.append("                       guarantee - ablation control only.")
+    report.append("  local epochs=1, batch size=300, optimizer=Adam(1e-3)")
+    report.append(f"  rounds requested   : {num_rounds}")
+    report.append(f"  rounds completed   : {len(mape)}")
+    if mape:
+        report.append(f"  final MAPE         : {mape[-1]:.2f}%")
+        report.append(f"  best  MAPE         : {min(mape):.2f}% (round {int(np.argmin(mape)) + 1})")
+        report.append("  last 5 MAPE        : " + ", ".join(f"{v:.2f}" for v in mape[-5:]))
+        report.append(f"  final MAE          : {mae[-1]:.4f}" if mae
+                      else "  final MAE          : <not available>")
+        report.append(f"  fresh clients/round: {participants}")
+    else:
+        report.append("  final MAPE         : <no round produced a finite MAPE>")
+    report.append("  note               : MAPE/MAE are the mean over personalised-hybrid")
+    report.append("                       client models (B5), NOT one fully global model.")
+    report.append("  known limitation   : B3 - NaNs are dropped before the lag features")
+    report.append("                       are built, so prev_day/prev_week may not be")
+    report.append("                       exactly 24 / 168 hours back.")
+    for line in report:
+        print(line)
+
+    try:
+        with open(out_file, 'w', encoding='utf-8') as fh:
+            fh.write("\n".join(report) + "\n")
+        print(f"\n  results saved to   : {os.path.abspath(out_file)}")
+    except OSError as exc:
+        print(f"\n  WARNING: could not write '{out_file}': {exc}")
+
+    # --- Write the optional DP diagnostics CSV (only when it was active) -----
+    if diag_out_path is not None:
+        rows = [r for c in clients for r in c.dp_diag_rows]
+        # Group by communication round (client order is preserved inside it).
+        rows.sort(key=lambda r: (r.get('round') if r.get('round') is not None
+                                 else -1, r.get('client_id') or 0))
+        # Re-checked right before writing: an existing file is never overwritten.
+        diag_out_path = unique_output_path(diag_out_path)
+        try:
+            with open(diag_out_path, 'w', encoding='utf-8', newline='') as fh:
+                fh.write(','.join(DP_DIAGNOSTICS_HEADER) + '\n')
+                for row in rows:
+                    fh.write(format_dp_diagnostics_row(row) + '\n')
+            print(f"\n  DP diagnostics saved: {os.path.abspath(diag_out_path)} "
+                  f"({len(rows)} rows, {len(DP_DIAGNOSTICS_HEADER)} columns)")
+        except OSError as exc:
+            print(f"\n  WARNING: could not write DP diagnostics "
+                  f"'{diag_out_path}': {exc}")
+
+    if plot:
+        plt.figure(figsize=(10, 6))
+        plt.plot(range(1, len(mape) + 1), mape, 'b-', linewidth=2)
+        plt.xlabel('Communication Round')
+        plt.ylabel('MAPE (%)')
+        plt.title('ASLA Baseline (single layer, no DP)')
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        plt.savefig('asla_baseline.png', dpi=150)
+        plt.show()
+
+    return history
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="ASLA framework. Default: full experiment suite. "
+                    "Use --asla-only for the isolated Stage 1 baseline.")
+    parser.add_argument('--asla-only', action='store_true',
+                        help="run only the single-layer ASLA baseline "
+                             "(no layer sweep, no quantization sweep, no FedAvg)")
+    parser.add_argument('--rounds', type=int, default=100,
+                        help="communication rounds for --asla-only (default: 100)")
+    parser.add_argument('--seed', type=int, default=42,
+                    help="random seed for reproducible experiments (default: 42)")
+    parser.add_argument('--agg-layer', type=int, default=1,
+                        help="layer index to aggregate (default: 1 = Dense(50))")
+    parser.add_argument('--quant-bits', type=int, default=32, choices=[8, 16, 32],
+                        help="quantization bits (default: 32 = none)")
+    parser.add_argument('--clients', type=int, default=10,
+                        help="maximum number of clients (default: 10)")
+    parser.add_argument('--data-folder', default='.',
+                        help="folder holding the client CSV files (default: .)")
+    parser.add_argument('--plot', action='store_true',
+                        help="save/show plots (off by default: plt.show() blocks)")
+    parser.add_argument('--out', default='baseline_asla_results.txt',
+                        help="file to write the baseline results to "
+                             "(default: baseline_asla_results.txt)")
+    parser.add_argument('--dp-method', default='none',
+                        choices=['none', 'gaussian', 'clip_only'],
+                        help="client-side DP method (default: none = disabled); "
+                             "'clip_only' is a noise-free ablation that clips "
+                             "the delta but gives NO privacy guarantee")
+    parser.add_argument('--dp-clip', type=float, default=0.0,
+                        help="client-side DP: global L2 clipping bound C on the "
+                             "delta's flattened vector (0 = DP disabled)")
+    parser.add_argument('--dp-sigma', type=float, default=0.0,
+                        help="client-side DP: Gaussian noise multiplier, added "
+                             "noise std = dp_sigma * clip (0 = DP disabled)")
+    parser.add_argument('--dp-diagnostics', action='store_true',
+                        help="record the scalar update norms (raw/clipped/"
+                             "noise/noisy L2 + clip factor) of every client "
+                             "update into a CSV; needs --dp-method gaussian "
+                             "with --dp-clip and --dp-sigma > 0, or "
+                             "--dp-method clip_only with --dp-clip > 0 (its "
+                             "noise columns are recorded as 0.0); default: "
+                             "off, so a normal run is completely unchanged)")
+    parser.add_argument('--dp-diagnostics-out', default='dp_diagnostics.csv',
+                        help="CSV file for --dp-diagnostics (default: "
+                             "dp_diagnostics.csv; a _1/_2/... name is chosen "
+                             "instead of overwriting an existing file)")
+    args = parser.parse_args()
+    np.random.seed(args.seed)
+    tf.random.set_seed(args.seed)
+    if args.asla_only:
+        run_asla_baseline(data_folder=args.data_folder,
+                          num_rounds=args.rounds,
+                          agg_layer=args.agg_layer,
+                          quant_bits=args.quant_bits,
+                          num_clients=args.clients,
+                          plot=args.plot,
+                          out_file=args.out,
+                          dp_clip=args.dp_clip,
+                          dp_sigma=args.dp_sigma,
+                          dp_method=args.dp_method,
+                          dp_diagnostics=args.dp_diagnostics,
+                          dp_diagnostics_out=args.dp_diagnostics_out)
+        return
+
+    run_experiment(args.data_folder)
     print("\n" + "="*60)
     print("✅ ALL EXPERIMENTS COMPLETE!")
     print("Visualizations saved: asla_vs_fedavg.png, quantization_comparison.png")
     print("="*60)
+
+
+if __name__ == "__main__":
+    main()
