@@ -1,0 +1,432 @@
+========================================================================
+ASLA PRIVACY-ATTACK STUDY - PHASE 1: REPLAY VALIDATION
+========================================================================
+phase            : Phase 1: structure + replay validation only
+script           : asla_privacy_attack.py
+stock module     : asla_complete.py (imported read-only, untouched)
+attack mode      : replay validation only
+--mode full      : NOT IMPLEMENTED - it refuses and exits non-zero
+run seed         : 42
+model build seed : 7
+build check      : OK (initial weights digest e9b036e556c916fa, identical in two builds)
+seed shim        : ON (public per-(client, round) tf.random.set_seed before each fit)
+selected layer   : model.layers[1]
+quant bits       : 32
+data folder      : D:\proposal\Adaptive-Single-layer-deepseek
+rounds requested : 3
+configs          : none, clip_only_c2, gaussian_c2_s0.001, gaussian_c2_s0.01
+clients in pass  : 10
+victims evaluated: 0, 1, 2, 3, 4
+eval rounds      : 1, 2, 3
+decoy candidate  : PJMW
+ablation levels  : ON
+determinism      : TF_DETERMINISTIC_OPS=1, PYTHONHASHSEED=0
+                   TF_NUM_INTRAOP_THREADS=1, TF_NUM_INTEROP_THREADS=1
+                   thread pools: inter=1 intra=1
+                   tf.config.experimental.enable_op_determinism(): ON
+                   random.seed(42) + np.random.seed(42) + tf.random.set_seed(42)
+                   build determinism self-check: OK (weights digest e9b036e556c916fa under seed 7)
+oneDNN           : TF_ENABLE_ONEDNN_OPTS=<unset> (left at the
+                   default on purpose: the stock baselines were made
+                   with oneDNN enabled and this environment was
+                   measured to reproduce them bit-identically)
+seed shim caveat : the batch ORDER differs from an unshimmed run, so
+                   this run's MAPE is NOT bit-comparable to
+                   baseline_100r_*.txt.  Semantics are unchanged:
+                   same data, loss, optimizer, epochs, batch size and
+                   shuffle=True; only the permutation is pinned.
+np.random        : deliberately NOT reseeded per fit, so the
+                   client-side DP noise stream stays private and the
+                   Gaussian arms are judged by a NOISE-BLIND attacker
+                   (its residual is the injected noise itself).
+
+------------------------------------------------------------------------
+SERIES USED
+------------------------------------------------------------------------
+index  name                   train      test      
+0      AEP                    9609       4119      
+1      COMED                  9609       4119      
+2      DAYTON                 9609       4119      
+3      DEOK                   9609       4119      
+4      DOM                    9609       4119      
+5      DUQ                    9609       4119      
+6      EKPC                   9609       4119      
+7      FE                     9609       4119      
+8      NI                     9609       4119      
+9      PJME                   9609       4119      
+10     PJMW                   9609       4119        <- DECOY CONTROL (not a client)
+
+------------------------------------------------------------------------
+UTILITY OF THE RECORDED PASS (context only)
+------------------------------------------------------------------------
+config                 rounds   final MAPE best MAPE  final MAE  fresh/round   
+none                   3        99.78%     99.78%     9880.4999  10            
+clip_only_c2           3        99.81%     99.81%     9881.9040  10            
+gaussian_c2_s0.001     3        99.81%     99.81%     9881.9016  10            
+gaussian_c2_s0.01      3        99.81%     99.81%     9881.9074  10            
+note: MAPE/MAE are means over personalised-hybrid client models (B5),
+      not one fully global model, and are NOT bit-comparable to
+      baseline_100r_*.txt (see the seed-shim caveat above).
+
+------------------------------------------------------------------------
+REPLAY VALIDATION
+------------------------------------------------------------------------
+rel_L2 = ||delta_obs - delta_pred|| / ||delta_obs||
+         0.0 = bit-exact reproduction, 1.0 = no better than
+         predicting nothing at all.
+cosine = direction agreement, i.e. what a ranking attack needs.
+decoy_series = the SAME oracle state and seed, a DIFFERENT real
+         series: the control that shows the score comes from the
+         series and not from the pipeline.
+note: when a mechanism is ACTIVE the client transmits G + d, so the
+      server recovers d as (G + d) - G.  Floating-point addition
+      and subtraction are not exactly inverse, so bit-exact can be
+      False while rel_L2 sits at the ~1e-7 numerical floor; the gate
+      therefore accepts rel_L2 <= 1e-6 as exact.  The none arm has no
+      such rounding and can be bit-exact.
+
+config none : dp_method=none clip=0 sigma=0 -> INACTIVE (the update is not modified at all)
+  knowledge              role          n     rel_L2 mean    cosine mean    bit-exact 
+  A_full_state           true_series   15    0.000000       1.000000       100%      
+  A_full_state           decoy_series  15    0.156178       0.996013       0%        
+  B_realistic            true_series   15    1.084924       0.242635       7%        
+  B_realistic            decoy_series  15    1.088070       0.243691       0%        
+  ablate_weights_only    true_series   15    0.179974       0.984534       33%       
+  ablate_weights_only    decoy_series  15    0.191741       0.984109       0%        
+  ablate_optimizer_only  true_series   15    1.012312       0.349586       7%        
+  ablate_optimizer_only  decoy_series  15    1.030817       0.355157       0%        
+  per-cell detail (true series; the ablation levels are in the table above and in the CSV):
+    round 1   client AEP            A_full_state   rel_L2=  0.000000  cos= 1.000000  bit-exact=True
+    round 1   client AEP            B_realistic    rel_L2=  0.000000  cos= 1.000000  bit-exact=True
+    round 1   client COMED          A_full_state   rel_L2=  0.000000  cos= 1.000000  bit-exact=True
+    round 1   client COMED          B_realistic    rel_L2=  1.343089  cos= 0.065074  bit-exact=False
+    round 1   client DAYTON         A_full_state   rel_L2=  0.000000  cos= 1.000000  bit-exact=True
+    round 1   client DAYTON         B_realistic    rel_L2=  1.342733  cos= 0.063456  bit-exact=False
+    round 1   client DEOK           A_full_state   rel_L2=  0.000000  cos= 1.000000  bit-exact=True
+    round 1   client DEOK           B_realistic    rel_L2=  1.223295  cos= 0.232650  bit-exact=False
+    round 1   client DOM            A_full_state   rel_L2=  0.000000  cos= 1.000000  bit-exact=True
+    round 1   client DOM            B_realistic    rel_L2=  1.451658  cos=-0.040648  bit-exact=False
+    round 2   client AEP            A_full_state   rel_L2=  0.000000  cos= 1.000000  bit-exact=True
+    round 2   client AEP            B_realistic    rel_L2=  0.382843  cos= 0.924430  bit-exact=False
+    round 2   client COMED          A_full_state   rel_L2=  0.000000  cos= 1.000000  bit-exact=True
+    round 2   client COMED          B_realistic    rel_L2=  1.242461  cos= 0.112891  bit-exact=False
+    round 2   client DAYTON         A_full_state   rel_L2=  0.000000  cos= 1.000000  bit-exact=True
+    round 2   client DAYTON         B_realistic    rel_L2=  1.293169  cos= 0.056689  bit-exact=False
+    round 2   client DEOK           A_full_state   rel_L2=  0.000000  cos= 1.000000  bit-exact=True
+    round 2   client DEOK           B_realistic    rel_L2=  1.170132  cos= 0.190315  bit-exact=False
+    round 2   client DOM            A_full_state   rel_L2=  0.000000  cos= 1.000000  bit-exact=True
+    round 2   client DOM            B_realistic    rel_L2=  1.432627  cos=-0.100812  bit-exact=False
+    round 3   client AEP            A_full_state   rel_L2=  0.000000  cos= 1.000000  bit-exact=True
+    round 3   client AEP            B_realistic    rel_L2=  0.642073  cos= 0.766918  bit-exact=False
+    round 3   client COMED          A_full_state   rel_L2=  0.000000  cos= 1.000000  bit-exact=True
+    round 3   client COMED          B_realistic    rel_L2=  1.093883  cos= 0.221687  bit-exact=False
+    round 3   client DAYTON         A_full_state   rel_L2=  0.000000  cos= 1.000000  bit-exact=True
+    round 3   client DAYTON         B_realistic    rel_L2=  1.210585  cos= 0.066433  bit-exact=False
+    round 3   client DEOK           A_full_state   rel_L2=  0.000000  cos= 1.000000  bit-exact=True
+    round 3   client DEOK           B_realistic    rel_L2=  1.150364  cos= 0.125904  bit-exact=False
+    round 3   client DOM            A_full_state   rel_L2=  0.000000  cos= 1.000000  bit-exact=True
+    round 3   client DOM            B_realistic    rel_L2=  1.294948  cos=-0.045461  bit-exact=False
+
+config clip_only_c2 : dp_method=clip_only clip=2 sigma=0 -> ACTIVE
+  knowledge              role          n     rel_L2 mean    cosine mean    bit-exact 
+  A_full_state           true_series   15    0.000000       1.000000       0%        
+  A_full_state           decoy_series  15    0.087930       0.996065       0%        
+  B_realistic            true_series   15    1.153265       0.244436       0%        
+  B_realistic            decoy_series  15    1.155877       0.245464       0%        
+  ablate_weights_only    true_series   15    0.140718       0.984508       0%        
+  ablate_weights_only    decoy_series  15    0.153440       0.984074       0%        
+  ablate_optimizer_only  true_series   15    1.065077       0.351088       0%        
+  ablate_optimizer_only  decoy_series  15    1.058103       0.356942       0%        
+  per-cell detail (true series; the ablation levels are in the table above and in the CSV):
+    round 1   client AEP            A_full_state   rel_L2=  0.000000  cos= 1.000000  bit-exact=False
+    round 1   client AEP            B_realistic    rel_L2=  0.000000  cos= 1.000000  bit-exact=False
+    round 1   client COMED          A_full_state   rel_L2=  0.000000  cos= 1.000000  bit-exact=False
+    round 1   client COMED          B_realistic    rel_L2=  1.360893  cos= 0.065074  bit-exact=False
+    round 1   client DAYTON         A_full_state   rel_L2=  0.000000  cos= 1.000000  bit-exact=False
+    round 1   client DAYTON         B_realistic    rel_L2=  1.359600  cos= 0.063456  bit-exact=False
+    round 1   client DEOK           A_full_state   rel_L2=  0.000000  cos= 1.000000  bit-exact=False
+    round 1   client DEOK           B_realistic    rel_L2=  1.232927  cos= 0.232650  bit-exact=False
+    round 1   client DOM            A_full_state   rel_L2=  0.000000  cos= 1.000000  bit-exact=False
+    round 1   client DOM            B_realistic    rel_L2=  1.451658  cos=-0.040648  bit-exact=False
+    round 2   client AEP            A_full_state   rel_L2=  0.000000  cos= 1.000000  bit-exact=False
+    round 2   client AEP            B_realistic    rel_L2=  0.389147  cos= 0.924282  bit-exact=False
+    round 2   client COMED          A_full_state   rel_L2=  0.000000  cos= 1.000000  bit-exact=False
+    round 2   client COMED          B_realistic    rel_L2=  1.331178  cos= 0.113983  bit-exact=False
+    round 2   client DAYTON         A_full_state   rel_L2=  0.000000  cos= 1.000000  bit-exact=False
+    round 2   client DAYTON         B_realistic    rel_L2=  1.373259  cos= 0.057080  bit-exact=False
+    round 2   client DEOK           A_full_state   rel_L2=  0.000000  cos= 1.000000  bit-exact=False
+    round 2   client DEOK           B_realistic    rel_L2=  1.271471  cos= 0.191681  bit-exact=False
+    round 2   client DOM            A_full_state   rel_L2=  0.000000  cos= 1.000000  bit-exact=False
+    round 2   client DOM            B_realistic    rel_L2=  1.484138  cos=-0.101333  bit-exact=False
+    round 3   client AEP            A_full_state   rel_L2=  0.000000  cos= 1.000000  bit-exact=False
+    round 3   client AEP            B_realistic    rel_L2=  0.679125  cos= 0.769395  bit-exact=False
+    round 3   client COMED          A_full_state   rel_L2=  0.000000  cos= 1.000000  bit-exact=False
+    round 3   client COMED          B_realistic    rel_L2=  1.243599  cos= 0.226731  bit-exact=False
+    round 3   client DAYTON         A_full_state   rel_L2=  0.000000  cos= 1.000000  bit-exact=False
+    round 3   client DAYTON         B_realistic    rel_L2=  1.362893  cos= 0.071261  bit-exact=False
+    round 3   client DEOK           A_full_state   rel_L2=  0.000000  cos= 1.000000  bit-exact=False
+    round 3   client DEOK           B_realistic    rel_L2=  1.316780  cos= 0.133045  bit-exact=False
+    round 3   client DOM            A_full_state   rel_L2=  0.000000  cos= 1.000000  bit-exact=False
+    round 3   client DOM            B_realistic    rel_L2=  1.442300  cos=-0.040115  bit-exact=False
+
+config gaussian_c2_s0.001 : dp_method=gaussian clip=2 sigma=0.001 -> ACTIVE
+  knowledge              role          n     rel_L2 mean    cosine mean    bit-exact 
+  A_full_state           true_series   15    0.070890       0.997485       0%        
+  A_full_state           decoy_series  15    0.117476       0.993512       0%        
+  B_realistic            true_series   15    1.156920       0.243923       0%        
+  B_realistic            decoy_series  15    1.157694       0.244961       0%        
+  ablate_weights_only    true_series   15    0.172104       0.982026       0%        
+  ablate_weights_only    decoy_series  15    0.175891       0.981573       0%        
+  ablate_optimizer_only  true_series   15    1.069238       0.350299       0%        
+  ablate_optimizer_only  decoy_series  15    1.060459       0.356128       0%        
+  per-cell detail (true series; the ablation levels are in the table above and in the CSV):
+    round 1   client AEP            A_full_state   rel_L2=  0.071316  cos= 0.997454  bit-exact=False
+    round 1   client AEP            B_realistic    rel_L2=  0.071316  cos= 0.997454  bit-exact=False
+    round 1   client COMED          A_full_state   rel_L2=  0.071616  cos= 0.997435  bit-exact=False
+    round 1   client COMED          B_realistic    rel_L2=  1.360724  cos= 0.065162  bit-exact=False
+    round 1   client DAYTON         A_full_state   rel_L2=  0.070794  cos= 0.997491  bit-exact=False
+    round 1   client DAYTON         B_realistic    rel_L2=  1.356934  cos= 0.064758  bit-exact=False
+    round 1   client DEOK           A_full_state   rel_L2=  0.071281  cos= 0.997457  bit-exact=False
+    round 1   client DEOK           B_realistic    rel_L2=  1.230915  cos= 0.232255  bit-exact=False
+    round 1   client DOM            A_full_state   rel_L2=  0.070858  cos= 0.997486  bit-exact=False
+    round 1   client DOM            B_realistic    rel_L2=  1.450562  cos=-0.041792  bit-exact=False
+    round 2   client AEP            A_full_state   rel_L2=  0.071432  cos= 0.997446  bit-exact=False
+    round 2   client AEP            B_realistic    rel_L2=  0.393537  cos= 0.922264  bit-exact=False
+    round 2   client COMED          A_full_state   rel_L2=  0.071706  cos= 0.997426  bit-exact=False
+    round 2   client COMED          B_realistic    rel_L2=  1.329239  cos= 0.114064  bit-exact=False
+    round 2   client DAYTON         A_full_state   rel_L2=  0.071047  cos= 0.997473  bit-exact=False
+    round 2   client DAYTON         B_realistic    rel_L2=  1.370376  cos= 0.057760  bit-exact=False
+    round 2   client DEOK           A_full_state   rel_L2=  0.069594  cos= 0.997575  bit-exact=False
+    round 2   client DEOK           B_realistic    rel_L2=  1.270476  cos= 0.190728  bit-exact=False
+    round 2   client DOM            A_full_state   rel_L2=  0.070598  cos= 0.997505  bit-exact=False
+    round 2   client DOM            B_realistic    rel_L2=  1.481356  cos=-0.100610  bit-exact=False
+    round 3   client AEP            A_full_state   rel_L2=  0.070732  cos= 0.997497  bit-exact=False
+    round 3   client AEP            B_realistic    rel_L2=  0.679533  cos= 0.768134  bit-exact=False
+    round 3   client COMED          A_full_state   rel_L2=  0.070503  cos= 0.997512  bit-exact=False
+    round 3   client COMED          B_realistic    rel_L2=  1.242573  cos= 0.225242  bit-exact=False
+    round 3   client DAYTON         A_full_state   rel_L2=  0.070741  cos= 0.997495  bit-exact=False
+    round 3   client DAYTON         B_realistic    rel_L2=  1.360774  cos= 0.071081  bit-exact=False
+    round 3   client DEOK           A_full_state   rel_L2=  0.071758  cos= 0.997423  bit-exact=False
+    round 3   client DEOK           B_realistic    rel_L2=  1.314468  cos= 0.132987  bit-exact=False
+    round 3   client DOM            A_full_state   rel_L2=  0.069372  cos= 0.997591  bit-exact=False
+    round 3   client DOM            B_realistic    rel_L2=  1.441018  cos=-0.040647  bit-exact=False
+
+config gaussian_c2_s0.01 : dp_method=gaussian clip=2 sigma=0.01 -> ACTIVE
+  knowledge              role          n     rel_L2 mean    cosine mean    bit-exact 
+  A_full_state           true_series   15    0.578884       0.815422       0%        
+  A_full_state           decoy_series  15    0.584797       0.812346       0%        
+  B_realistic            true_series   15    1.132106       0.200926       0%        
+  B_realistic            decoy_series  15    1.132406       0.201677       0%        
+  ablate_weights_only    true_series   15    0.597152       0.802118       0%        
+  ablate_weights_only    decoy_series  15    0.597667       0.801732       0%        
+  ablate_optimizer_only  true_series   15    1.070488       0.288297       0%        
+  ablate_optimizer_only  decoy_series  15    1.061908       0.292976       0%        
+  per-cell detail (true series; the ablation levels are in the table above and in the CSV):
+    round 1   client AEP            A_full_state   rel_L2=  0.571261  cos= 0.820881  bit-exact=False
+    round 1   client AEP            B_realistic    rel_L2=  0.571261  cos= 0.820881  bit-exact=False
+    round 1   client COMED          A_full_state   rel_L2=  0.582541  cos= 0.812921  bit-exact=False
+    round 1   client COMED          B_realistic    rel_L2=  1.254918  cos= 0.058556  bit-exact=False
+    round 1   client DAYTON         A_full_state   rel_L2=  0.576330  cos= 0.817288  bit-exact=False
+    round 1   client DAYTON         B_realistic    rel_L2=  1.252476  cos= 0.040644  bit-exact=False
+    round 1   client DEOK           A_full_state   rel_L2=  0.581434  cos= 0.813617  bit-exact=False
+    round 1   client DEOK           B_realistic    rel_L2=  1.154733  cos= 0.200665  bit-exact=False
+    round 1   client DOM            A_full_state   rel_L2=  0.589052  cos= 0.808096  bit-exact=False
+    round 1   client DOM            B_realistic    rel_L2=  1.297949  cos=-0.008416  bit-exact=False
+    round 2   client AEP            A_full_state   rel_L2=  0.578809  cos= 0.815516  bit-exact=False
+    round 2   client AEP            B_realistic    rel_L2=  0.660609  cos= 0.752642  bit-exact=False
+    round 2   client COMED          A_full_state   rel_L2=  0.580853  cos= 0.814013  bit-exact=False
+    round 2   client COMED          B_realistic    rel_L2=  1.237070  cos= 0.083676  bit-exact=False
+    round 2   client DAYTON         A_full_state   rel_L2=  0.578744  cos= 0.815522  bit-exact=False
+    round 2   client DAYTON         B_realistic    rel_L2=  1.259259  cos= 0.053006  bit-exact=False
+    round 2   client DEOK           A_full_state   rel_L2=  0.577568  cos= 0.816362  bit-exact=False
+    round 2   client DEOK           B_realistic    rel_L2=  1.195635  cos= 0.149693  bit-exact=False
+    round 2   client DOM            A_full_state   rel_L2=  0.580820  cos= 0.814034  bit-exact=False
+    round 2   client DOM            B_realistic    rel_L2=  1.349692  cos=-0.095885  bit-exact=False
+    round 3   client AEP            A_full_state   rel_L2=  0.574421  cos= 0.818577  bit-exact=False
+    round 3   client AEP            B_realistic    rel_L2=  0.807420  cos= 0.620619  bit-exact=False
+    round 3   client COMED          A_full_state   rel_L2=  0.575348  cos= 0.817911  bit-exact=False
+    round 3   client COMED          B_realistic    rel_L2=  1.161556  cos= 0.196993  bit-exact=False
+    round 3   client DAYTON         A_full_state   rel_L2=  0.572655  cos= 0.819797  bit-exact=False
+    round 3   client DAYTON         B_realistic    rel_L2=  1.252120  cos= 0.063096  bit-exact=False
+    round 3   client DEOK           A_full_state   rel_L2=  0.580805  cos= 0.814046  bit-exact=False
+    round 3   client DEOK           B_realistic    rel_L2=  1.221830  cos= 0.102465  bit-exact=False
+    round 3   client DOM            A_full_state   rel_L2=  0.582625  cos= 0.812742  bit-exact=False
+    round 3   client DOM            B_realistic    rel_L2=  1.305055  cos=-0.024747  bit-exact=False
+
+------------------------------------------------------------------------
+SEPARATION OF THE TRUE UPDATES (ranking feasibility)
+------------------------------------------------------------------------
+Mean pairwise cosine between the observed deltas of DIFFERENT
+clients in the same round.  Near 0 = nearly orthogonal, so
+cosine similarity can tell clients apart; near 1 = the ranking
+stage would be meaningless however exact the replay is.
+
+config none
+  round 1   pairwise cosines : n=45 mean=0.0579 min=-0.2427 max=0.3504
+  round 2   pairwise cosines : n=45 mean=0.0879 min=-0.1843 max=0.3460
+  round 3   pairwise cosines : n=45 mean=0.1356 min=-0.1746 max=0.3844
+  observed ||delta||         : n=15 mean=2.3835 min=1.9539 max=2.9445
+
+config clip_only_c2
+  round 1   pairwise cosines : n=45 mean=0.0579 min=-0.2427 max=0.3504
+  round 2   pairwise cosines : n=45 mean=0.0888 min=-0.1838 max=0.3471
+  round 3   pairwise cosines : n=45 mean=0.1436 min=-0.1687 max=0.3877
+  observed ||delta||         : n=15 mean=1.9959 min=1.9539 max=2.0000
+
+config gaussian_c2_s0.001
+  round 1   pairwise cosines : n=45 mean=0.0578 min=-0.2419 max=0.3499
+  round 2   pairwise cosines : n=45 mean=0.0887 min=-0.1801 max=0.3459
+  round 3   pairwise cosines : n=45 mean=0.1429 min=-0.1709 max=0.3854
+  observed ||delta||         : n=15 mean=2.0018 min=1.9590 max=2.0086
+
+config gaussian_c2_s0.01
+  round 1   pairwise cosines : n=45 mean=0.0391 min=-0.1535 max=0.2140
+  round 2   pairwise cosines : n=45 mean=0.0582 min=-0.1158 max=0.2279
+  round 3   pairwise cosines : n=45 mean=0.0956 min=-0.1051 max=0.2690
+  observed ||delta||         : n=15 mean=2.4483 min=2.4152 max=2.4806
+
+------------------------------------------------------------------------
+FEASIBILITY GATE (may the ranking stage run?)
+------------------------------------------------------------------------
+PRECONDITION: the run must be reproducible.  Two model builds
+under the build seed must give identical initial weights, else
+every number below - and the verdict - is one unreproducible
+sample and no ranking stage may be built on it.
+THREE INDEPENDENT conditions: (1) the oracle replay must
+reproduce the update exactly for a noise-free arm (every cell
+bit-identical, or at worst to float rounding), or with a
+residual equal to the injected noise for a noise-injecting one -
+else the pipeline model is wrong; (2) the
+true deltas must be separable, else no ranking could work; (3)
+the true series must outscore the decoy control in EVERY
+evaluated round - a mean alone can be decided by the last
+decimal, and a round that the decoy reproduces just as well
+carries no series-specific information at all.
+
+precondition: build determinism OK (initial weights digest e9b036e556c916fa)
+
+config                 oracle exact  oracle cos   B cos      decoy cos   margin    separation 
+none                   100%          1.000000     0.242635   0.243691    -0.0011   0.0938     
+clip_only_c2           ~exact        1.000000     0.244436   0.245464    -0.0010   0.0967     
+gaussian_c2_s0.001     n/a (noise)   0.997485     0.243923   0.244961    -0.0010   0.0965     
+gaussian_c2_s0.01      n/a (noise)   0.815422     0.200926   0.201677    -0.0008   0.0643     
+
+condition 1 (did the oracle replay reproduce the update?) is
+mechanism-aware: a noise-free arm must reproduce the update
+exactly (at worst to float rounding), while a
+noise-injecting arm CANNOT be - the draw is not observable and
+not reproducible even with the whole pre-round state - so there
+the residual must instead equal the injected noise, i.e.
+residual/||noise|| = 1.00 (tolerance 0.10):
+  none                   bit-exact (100% of cells bit-identical, mean rel_L2 0.00e+00)
+  clip_only_c2           exact to float rounding (0% of cells bit-identical, mean rel_L2 1.09e-07)
+  gaussian_c2_s0.001     noise-explained: residual/noise = 0.9984 (||noise|| 0.142136)
+  gaussian_c2_s0.01      noise-explained: residual/noise = 0.9977 (||noise|| 1.420584)
+
+per-round decoy margin (realistic arm: true minus decoy cosine) - a
+round with a negative margin carries no series information:
+  none                   round 1: -0.0036   round 2: +0.0006   round 3: -0.0002
+  clip_only_c2           round 1: -0.0036   round 2: +0.0005   round 3: -0.0000
+  gaussian_c2_s0.001     round 1: -0.0035   round 2: +0.0005   round 3: -0.0001
+  gaussian_c2_s0.01      round 1: -0.0031   round 2: +0.0008   round 3: -0.0000
+
+signal ceiling - the SAME comparison with the pre-round state
+known (oracle arm), i.e. how much series information the update
+carries at all.  A large ceiling next to a ~0 threat-model
+margin means the information exists but the unmodelled
+pre-round state buries it, so the obstacle is the knowledge
+model, not the candidate list:
+  none                   round 1: +0.0006   round 2: +0.0055   round 3: +0.0059   (threat model keeps -26.5% of it)
+  clip_only_c2           round 1: +0.0006   round 2: +0.0055   round 3: +0.0057   (threat model keeps -26.1% of it)
+  gaussian_c2_s0.001     round 1: +0.0006   round 2: +0.0055   round 3: +0.0058   (threat model keeps -26.1% of it)
+  gaussian_c2_s0.01      round 1: +0.0005   round 2: +0.0042   round 3: +0.0045   (threat model keeps -24.4% of it)
+
+  none                   ABORT: the true series does not outscore the decoy control in every round (threat-model margin 1:-0.0036 2:+0.0006 3:-0.0002; mean -0.0011) - round(s) 1, 3 carry no series-specific information, so a ranking would be meaningless there.  The decoy is another real client, so beating it requires the series to drive the update more than the unobservable pre-round state does; round 1 is the classic case, where that state dominates the local delta.  DIAGNOSIS: the signal itself exists - with the pre-round state known (oracle arm) the true series beats the decoy by +0.0040 (mean), 1:+0.0006 2:+0.0055 3:+0.0059 per round - but at this knowledge level the unmodelled state gap buries it (-26.5% of the ceiling survives).  So a ranking stage needs a stronger knowledge model, not a better candidate list.
+  clip_only_c2           ABORT: the true series does not outscore the decoy control in every round (threat-model margin 1:-0.0036 2:+0.0005 3:-0.0000; mean -0.0010) - round(s) 1, 3 carry no series-specific information, so a ranking would be meaningless there.  The decoy is another real client, so beating it requires the series to drive the update more than the unobservable pre-round state does; round 1 is the classic case, where that state dominates the local delta.  DIAGNOSIS: the signal itself exists - with the pre-round state known (oracle arm) the true series beats the decoy by +0.0039 (mean), 1:+0.0006 2:+0.0055 3:+0.0057 per round - but at this knowledge level the unmodelled state gap buries it (-26.1% of the ceiling survives).  So a ranking stage needs a stronger knowledge model, not a better candidate list.
+  gaussian_c2_s0.001     ABORT: the true series does not outscore the decoy control in every round (threat-model margin 1:-0.0035 2:+0.0005 3:-0.0001; mean -0.0010) - round(s) 1, 3 carry no series-specific information, so a ranking would be meaningless there.  The decoy is another real client, so beating it requires the series to drive the update more than the unobservable pre-round state does; round 1 is the classic case, where that state dominates the local delta.  DIAGNOSIS: the signal itself exists - with the pre-round state known (oracle arm) the true series beats the decoy by +0.0040 (mean), 1:+0.0006 2:+0.0055 3:+0.0058 per round - but at this knowledge level the unmodelled state gap buries it (-26.1% of the ceiling survives).  So a ranking stage needs a stronger knowledge model, not a better candidate list.
+  gaussian_c2_s0.01      ABORT: the true series does not outscore the decoy control in every round (threat-model margin 1:-0.0031 2:+0.0008 3:-0.0000; mean -0.0008) - round(s) 1, 3 carry no series-specific information, so a ranking would be meaningless there.  The decoy is another real client, so beating it requires the series to drive the update more than the unobservable pre-round state does; round 1 is the classic case, where that state dominates the local delta.  DIAGNOSIS: the signal itself exists - with the pre-round state known (oracle arm) the true series beats the decoy by +0.0031 (mean), 1:+0.0005 2:+0.0042 3:+0.0045 per round - but at this knowledge level the unmodelled state gap buries it (-24.4% of the ceiling survives).  So a ranking stage needs a stronger knowledge model, not a better candidate list.
+
+------------------------------------------------------------------------
+DP DIAGNOSTICS CROSS-CHECK
+------------------------------------------------------------------------
+config clip_only_c2
+  updates measured       : 30
+  ||raw delta|| mean     : 2.361296
+  ||clipped delta|| mean : 1.995523
+  ||noise|| mean         : 0.000000
+  noise/raw delta ratio  : 0.000000
+  clipping bound         : 83.33% of updates were clipped
+  residual, ORACLE arm   : 0.000000  (full hidden state restored, so only the
+                           mechanism can separate prediction from transmission)
+  -> this arm adds NO noise (clipping only), so a residual here
+     would be a replay error, not a mechanism effect.
+  residual, REALISTIC arm: 2.302072  (also carries the hidden-state gap)
+
+config gaussian_c2_s0.001
+  updates measured       : 30
+  ||raw delta|| mean     : 2.361168
+  ||clipped delta|| mean : 1.995523
+  ||noise|| mean         : 0.142136
+  noise/raw delta ratio  : 0.061319
+  clipping bound         : 83.33% of updates were clipped
+  residual, ORACLE arm   : 0.141906  (full hidden state restored, so only the
+                           mechanism can separate prediction from transmission)
+  -> residual/noise      : 0.9984   (1.00 means the residual IS the noise)
+  residual, REALISTIC arm: 2.316030  (also carries the hidden-state gap)
+
+config gaussian_c2_s0.01
+  updates measured       : 30
+  ||raw delta|| mean     : 2.361288
+  ||clipped delta|| mean : 1.995523
+  ||noise|| mean         : 1.420584
+  noise/raw delta ratio  : 0.612782
+  clipping bound         : 83.33% of updates were clipped
+  residual, ORACLE arm   : 1.417273  (full hidden state restored, so only the
+                           mechanism can separate prediction from transmission)
+  -> residual/noise      : 0.9977   (1.00 means the residual IS the noise)
+  residual, REALISTIC arm: 2.769778  (also carries the hidden-state gap)
+
+------------------------------------------------------------------------
+IDENTIFICATION (a separate claim from reconstruction)
+------------------------------------------------------------------------
+Not run (add --identity).  Identification asks WHICH series
+produced an update; reconstruction asks whether the update
+itself can be reproduced.  They are different claims and are
+reported in different CSVs.
+
+------------------------------------------------------------------------
+CLAIMED vs NOT CLAIMED
+------------------------------------------------------------------------
+CLAIMED (Phase 1):
+  * whether a candidate load series can reproduce the selected-layer
+    update a client transmitted, and how much of that reproduction
+    depends on state the attacker should not have (oracle vs public);
+  * the same measured against a decoy series and, for the identity
+    stage, against chance with a shuffled-label control;
+  * the separation of different clients' true updates, which is what
+    bounds any later ranking.
+NOT CLAIMED:
+  * no differential-privacy guarantee, no epsilon/delta, no end-to-end
+    privacy accounting of any kind;
+  * a poor replay score is NOT privacy: it says this replay was
+    inexact, and the ablation levels name the responsible component;
+  * identifying a series is NOT recovering it (separate metrics and
+    separate CSV columns);
+  * clipping alone hides nothing: it preserves the direction exactly;
+  * this run's MAPE is not bit-comparable to baseline_100r_*.txt
+    (documented seed-shim deviation);
+  * the Gaussian arms are judged by a noise-blind attacker, so their
+    residual is the injected noise, not a failed replay: condition 1
+    checks residual/||noise|| = 1.00 for them, since bit-exactness is
+    impossible by construction once a noise draw is injected.
+
+------------------------------------------------------------------------
+FILES WRITTEN BY THIS RUN
+------------------------------------------------------------------------
+  replay metrics CSV     D:\proposal\Adaptive-Single-layer-deepseek\privacy_attack_replay_metrics_sens1.csv
+  utility CSV            D:\proposal\Adaptive-Single-layer-deepseek\privacy_attack_utility_sens1.csv
+  text report            D:\proposal\Adaptive-Single-layer-deepseek\privacy_attack_validation_sens1.txt
+
+Existing artifacts (asla_complete.py, baseline_100r_*.txt,
+dp_diag_*.txt, *.png) were never opened for writing.
+

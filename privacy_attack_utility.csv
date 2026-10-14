@@ -1,0 +1,2 @@
+config,dp_method,dp_clip,dp_sigma,active,rounds_completed,final_mape,best_mape,final_mae,participants_last
+none,none,0.0,0.0,False,2,np.float64(99.92195663452148),np.float64(99.92195663452148),np.float64(9887.1115234375),10

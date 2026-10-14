@@ -1,0 +1,166 @@
+========================================================================
+ASLA PRIVACY-ATTACK STUDY - PHASE 1: REPLAY VALIDATION
+========================================================================
+phase            : Phase 1: structure + replay validation only
+script           : asla_privacy_attack.py
+stock module     : asla_complete.py (imported read-only, untouched)
+attack mode      : replay validation only
+--mode full      : NOT IMPLEMENTED - it refuses and exits non-zero
+run seed         : 42
+model build seed : 7
+seed shim        : OFF (--no-seed-shim: the replay is expected NOT to reproduce)
+selected layer   : model.layers[1]
+quant bits       : 32
+data folder      : D:\proposal\Adaptive-Single-layer-deepseek
+rounds requested : 2
+configs          : none
+clients in pass  : 3
+victims evaluated: 0
+eval rounds      : 1, 2
+decoy candidate  : DEOK
+ablation levels  : OFF
+determinism      : TF_DETERMINISTIC_OPS=1, PYTHONHASHSEED=0
+                   TF_NUM_INTRAOP_THREADS=1, TF_NUM_INTEROP_THREADS=1
+                   thread pools: inter=1 intra=1
+                   tf.config.experimental.enable_op_determinism(): ON
+                   np.random.seed(42) + tf.random.set_seed(42)
+oneDNN           : TF_ENABLE_ONEDNN_OPTS=<unset> (left at the
+                   default on purpose: the stock baselines were made
+                   with oneDNN enabled and this environment was
+                   measured to reproduce them bit-identically)
+seed shim caveat : the batch ORDER differs from an unshimmed run, so
+                   this run's MAPE is NOT bit-comparable to
+                   baseline_100r_*.txt.  Semantics are unchanged:
+                   same data, loss, optimizer, epochs, batch size and
+                   shuffle=True; only the permutation is pinned.
+np.random        : deliberately NOT reseeded per fit, so the
+                   client-side DP noise stream stays private and the
+                   Gaussian arms are judged by a NOISE-BLIND attacker
+                   (its residual is the injected noise itself).
+
+------------------------------------------------------------------------
+SERIES USED
+------------------------------------------------------------------------
+index  name                   train      test      
+0      AEP                    9609       4119      
+1      COMED                  9609       4119      
+2      DAYTON                 9609       4119      
+3      DEOK                   9609       4119        <- DECOY CONTROL (not a client)
+
+------------------------------------------------------------------------
+UTILITY OF THE RECORDED PASS (context only)
+------------------------------------------------------------------------
+config                 rounds   final MAPE best MAPE  final MAE  fresh/round   
+none                   2        99.88%     99.88%     10050.4224 3             
+note: MAPE/MAE are means over personalised-hybrid client models (B5),
+      not one fully global model, and are NOT bit-comparable to
+      baseline_100r_*.txt (see the seed-shim caveat above).
+
+------------------------------------------------------------------------
+REPLAY VALIDATION
+------------------------------------------------------------------------
+rel_L2 = ||delta_obs - delta_pred|| / ||delta_obs||
+         0.0 = bit-exact reproduction, 1.0 = no better than
+         predicting nothing at all.
+cosine = direction agreement, i.e. what a ranking attack needs.
+decoy_series = the SAME oracle state and seed, a DIFFERENT real
+         series: the control that shows the score comes from the
+         series and not from the pipeline.
+
+config none : dp_method=none clip=0 sigma=0 -> INACTIVE (the update is not modified at all)
+  knowledge              role          n     rel_L2 mean    cosine mean    bit-exact 
+  A_full_state           true_series   2     0.021288       0.999736       0%        
+  A_full_state           decoy_series  2     0.258454       0.987223       0%        
+  B_realistic            true_series   2     1.387282       0.014601       0%        
+  B_realistic            decoy_series  2     1.403779       -0.009879      0%        
+  per-cell detail (true series; the ablation levels are in the table above and in the CSV):
+    round 1   client AEP            A_full_state   rel_L2=  0.029976  cos= 0.999551  bit-exact=False
+    round 1   client AEP            B_realistic    rel_L2=  1.489613  cos=-0.051954  bit-exact=False
+    round 2   client AEP            A_full_state   rel_L2=  0.012600  cos= 0.999921  bit-exact=False
+    round 2   client AEP            B_realistic    rel_L2=  1.284951  cos= 0.081157  bit-exact=False
+
+------------------------------------------------------------------------
+SEPARATION OF THE TRUE UPDATES (ranking feasibility)
+------------------------------------------------------------------------
+Mean pairwise cosine between the observed deltas of DIFFERENT
+clients in the same round.  Near 0 = nearly orthogonal, so
+cosine similarity can tell clients apart; near 1 = the ranking
+stage would be meaningless however exact the replay is.
+
+config none
+  round 1   pairwise cosines : n=3 mean=0.1235 min=-0.0666 max=0.3415
+  round 2   pairwise cosines : n=3 mean=0.1423 min=0.0359 max=0.3133
+  observed ||delta||         : n=2 mean=2.1135 min=1.9632 max=2.2638
+
+------------------------------------------------------------------------
+FEASIBILITY GATE (may the ranking stage run?)
+------------------------------------------------------------------------
+THREE INDEPENDENT conditions: (1) the oracle replay must
+reproduce the update, else the pipeline model is wrong; (2) the
+true deltas must be separable, else no ranking could work; (3)
+the true series must outscore the decoy control, else the cell
+carries no series-specific information at all.
+
+config                 oracle exact  oracle cos   B cos      decoy cos   margin    separation 
+none                   0%            0.999736     0.014601   -0.009879   0.0245    0.1329     
+
+per-round decoy margin (realistic arm: true minus decoy cosine) - a
+round with a negative margin carries no series information:
+  none                   round 1: -0.0408   round 2: +0.0898
+
+  none                   EXPECTED-FAILURE DEMO: ABORT: the oracle replay does not reproduce the update (bit-exact 0%, mean rel_L2 0.021288) - ranking must not run. 
+
+NOTE: --no-seed-shim was used, so the per-fit seed was NOT set.
+The stock fit draws its batch permutation from the global RNG,
+which depends on the whole call history, so a failure to
+reproduce here is the EXPECTED result and is the empirical
+justification for the shim.  It is not evidence of privacy.
+
+------------------------------------------------------------------------
+DP DIAGNOSTICS CROSS-CHECK
+------------------------------------------------------------------------
+No active mechanism in this run: there is no noise to
+cross-check (none / clip_only add none by design).
+
+------------------------------------------------------------------------
+IDENTIFICATION (a separate claim from reconstruction)
+------------------------------------------------------------------------
+Not run (add --identity).  Identification asks WHICH series
+produced an update; reconstruction asks whether the update
+itself can be reproduced.  They are different claims and are
+reported in different CSVs.
+
+------------------------------------------------------------------------
+CLAIMED vs NOT CLAIMED
+------------------------------------------------------------------------
+CLAIMED (Phase 1):
+  * whether a candidate load series can reproduce the selected-layer
+    update a client transmitted, and how much of that reproduction
+    depends on state the attacker should not have (oracle vs public);
+  * the same measured against a decoy series and, for the identity
+    stage, against chance with a shuffled-label control;
+  * the separation of different clients' true updates, which is what
+    bounds any later ranking.
+NOT CLAIMED:
+  * no differential-privacy guarantee, no epsilon/delta, no end-to-end
+    privacy accounting of any kind;
+  * a poor replay score is NOT privacy: it says this replay was
+    inexact, and the ablation levels name the responsible component;
+  * identifying a series is NOT recovering it (separate metrics and
+    separate CSV columns);
+  * clipping alone hides nothing: it preserves the direction exactly;
+  * this run's MAPE is not bit-comparable to baseline_100r_*.txt
+    (documented seed-shim deviation);
+  * the Gaussian arms are judged by a noise-blind attacker, so their
+    residual is the injected noise, not a failed replay.
+
+------------------------------------------------------------------------
+FILES WRITTEN BY THIS RUN
+------------------------------------------------------------------------
+  replay metrics CSV     D:\proposal\Adaptive-Single-layer-deepseek\pa_noshim2_replay.csv
+  utility CSV            D:\proposal\Adaptive-Single-layer-deepseek\pa_noshim2_utility.csv
+  text report            D:\proposal\Adaptive-Single-layer-deepseek\privacy_attack_noshim2.txt
+
+Existing artifacts (asla_complete.py, baseline_100r_*.txt,
+dp_diag_*.txt, *.png) were never opened for writing.
+

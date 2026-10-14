@@ -1,0 +1,65 @@
+config,round,client_id,client_name,knowledge,role,rel_l2,cosine,bit_equal,obs_l2,pred_l2,seeded,restore_weights,restore_optimizer,fit_seed
+none,1,0,AEP,A_full_state,true_series,0.0,1.0,True,1.9850969956218725,1.9850969956218725,True,restored(all layers),restored(2 vars),42000127
+none,1,0,AEP,A_full_state,decoy_series,0.036117545383439954,0.9993489282692821,False,1.9850969956218725,1.9871009624036076,True,restored(all layers),restored(2 vars),42000127
+none,1,0,AEP,B_realistic,true_series,0.0,1.0,True,1.9850969956218725,1.9850969956218725,True,public-init,fresh,42000127
+none,1,0,AEP,B_realistic,decoy_series,0.036117545383439954,0.9993489282692821,False,1.9850969956218725,1.9871009624036076,True,public-init,fresh,42000127
+none,1,0,AEP,ablate_weights_only,true_series,0.0,1.0,True,1.9850969956218725,1.9850969956218725,True,restored(all layers),fresh,42000127
+none,1,0,AEP,ablate_weights_only,decoy_series,0.036117545383439954,0.9993489282692821,False,1.9850969956218725,1.9871009624036076,True,restored(all layers),fresh,42000127
+none,1,0,AEP,ablate_optimizer_only,true_series,0.0,1.0,True,1.9850969956218725,1.9850969956218725,True,public-init,restored(2 vars),42000127
+none,1,0,AEP,ablate_optimizer_only,decoy_series,0.036117545383439954,0.9993489282692821,False,1.9850969956218725,1.9871009624036076,True,public-init,restored(2 vars),42000127
+none,2,0,AEP,A_full_state,true_series,0.0,1.0,True,2.2744691946917004,2.2744691946917004,True,restored(all layers),restored(14 vars),42000128
+none,2,0,AEP,A_full_state,decoy_series,0.3072104448494069,0.9886971129800212,False,2.2744691946917004,1.6388799559701885,True,restored(all layers),restored(14 vars),42000128
+none,2,0,AEP,B_realistic,true_series,0.3828434282996039,0.9244298483607878,False,2.2744691946917004,2.025804584519221,True,public-init,fresh,42000128
+none,2,0,AEP,B_realistic,decoy_series,0.3813661605047755,0.9250313480006137,False,2.2744691946917004,2.027730272720571,True,public-init,fresh,42000128
+none,2,0,AEP,ablate_weights_only,true_series,0.21490542709833516,0.9802976128347648,False,2.2744691946917004,2.0370942935672547,True,restored(all layers),fresh,42000128
+none,2,0,AEP,ablate_weights_only,decoy_series,0.21475278767118353,0.9802226174450709,False,2.2744691946917004,2.0398011496022517,True,restored(all layers),fresh,42000128
+none,2,0,AEP,ablate_optimizer_only,true_series,0.33737790122337746,0.9415590915492317,False,2.2744691946917004,2.098549987676245,True,public-init,restored(14 vars),42000128
+none,2,0,AEP,ablate_optimizer_only,decoy_series,0.4897566099916072,0.9122992731226455,False,2.2744691946917004,1.4640507085579042,True,public-init,restored(14 vars),42000128
+clip_only_c2,1,0,AEP,A_full_state,true_series,1.1953348717121591e-08,0.9999999999999999,False,1.9850969953183386,1.9850969956218725,True,restored(all layers),restored(2 vars),42000127
+clip_only_c2,1,0,AEP,A_full_state,decoy_series,0.03611754531745938,0.9993489282719168,False,1.9850969953183386,1.9871009624036076,True,restored(all layers),restored(2 vars),42000127
+clip_only_c2,1,0,AEP,B_realistic,true_series,1.1953348717121591e-08,0.9999999999999999,False,1.9850969953183386,1.9850969956218725,True,public-init,fresh,42000127
+clip_only_c2,1,0,AEP,B_realistic,decoy_series,0.03611754531745938,0.9993489282719168,False,1.9850969953183386,1.9871009624036076,True,public-init,fresh,42000127
+clip_only_c2,1,0,AEP,ablate_weights_only,true_series,1.1953348717121591e-08,0.9999999999999999,False,1.9850969953183386,1.9850969956218725,True,restored(all layers),fresh,42000127
+clip_only_c2,1,0,AEP,ablate_weights_only,decoy_series,0.03611754531745938,0.9993489282719168,False,1.9850969953183386,1.9871009624036076,True,restored(all layers),fresh,42000127
+clip_only_c2,1,0,AEP,ablate_optimizer_only,true_series,1.1953348717121591e-08,0.9999999999999999,False,1.9850969953183386,1.9850969956218725,True,public-init,restored(2 vars),42000127
+clip_only_c2,1,0,AEP,ablate_optimizer_only,decoy_series,0.03611754531745938,0.9993489282719168,False,1.9850969953183386,1.9871009624036076,True,public-init,restored(2 vars),42000127
+clip_only_c2,2,0,AEP,A_full_state,true_series,1.22861959084628e-07,0.999999999999994,False,2.000000096956561,2.0,True,restored(all layers),restored(14 vars),42000128
+clip_only_c2,2,0,AEP,A_full_state,decoy_series,0.22695088344723874,0.9888481033190313,False,2.000000096956561,1.6351921257295072,True,restored(all layers),restored(14 vars),42000128
+clip_only_c2,2,0,AEP,B_realistic,true_series,0.38914681561722714,0.9242823742768276,False,2.000000096956561,2.0000000000000004,True,public-init,fresh,42000128
+clip_only_c2,2,0,AEP,B_realistic,decoy_series,0.38734867995628613,0.9249804964312466,False,2.000000096956561,1.9999999999999998,True,public-init,fresh,42000128
+clip_only_c2,2,0,AEP,ablate_weights_only,true_series,0.19858144266458685,0.9802827043587667,False,2.000000096956561,2.0,True,restored(all layers),fresh,42000128
+clip_only_c2,2,0,AEP,ablate_weights_only,decoy_series,0.19896401430836222,0.9802066595456057,False,2.000000096956561,2.0,True,restored(all layers),fresh,42000128
+clip_only_c2,2,0,AEP,ablate_optimizer_only,true_series,0.3421602686395711,0.9414631724444852,False,2.000000096956561,2.0000000000000004,True,public-init,restored(14 vars),42000128
+clip_only_c2,2,0,AEP,ablate_optimizer_only,decoy_series,0.44806231160028487,0.9124433915884694,False,2.000000096956561,1.4598510862207392,True,public-init,restored(14 vars),42000128
+gaussian_c2_s0.001,1,0,AEP,A_full_state,true_series,0.0713156736429557,0.9974542715091188,False,1.9882215492760695,1.9850969956218725,True,restored(all layers),restored(2 vars),42000127
+gaussian_c2_s0.001,1,0,AEP,A_full_state,decoy_series,0.07995350124222173,0.9968020752582522,False,1.9882215492760695,1.9871009624036076,True,restored(all layers),restored(2 vars),42000127
+gaussian_c2_s0.001,1,0,AEP,B_realistic,true_series,0.0713156736429557,0.9974542715091188,False,1.9882215492760695,1.9850969956218725,True,public-init,fresh,42000127
+gaussian_c2_s0.001,1,0,AEP,B_realistic,decoy_series,0.07995350124222173,0.9968020752582522,False,1.9882215492760695,1.9871009624036076,True,public-init,fresh,42000127
+gaussian_c2_s0.001,1,0,AEP,ablate_weights_only,true_series,0.0713156736429557,0.9974542715091188,False,1.9882215492760695,1.9850969956218725,True,restored(all layers),fresh,42000127
+gaussian_c2_s0.001,1,0,AEP,ablate_weights_only,decoy_series,0.07995350124222173,0.9968020752582522,False,1.9882215492760695,1.9871009624036076,True,restored(all layers),fresh,42000127
+gaussian_c2_s0.001,1,0,AEP,ablate_optimizer_only,true_series,0.0713156736429557,0.9974542715091188,False,1.9882215492760695,1.9850969956218725,True,public-init,restored(2 vars),42000127
+gaussian_c2_s0.001,1,0,AEP,ablate_optimizer_only,decoy_series,0.07995350124222173,0.9968020752582522,False,1.9882215492760695,1.9871009624036076,True,public-init,restored(2 vars),42000127
+gaussian_c2_s0.001,2,0,AEP,A_full_state,true_series,0.07143188027908323,0.9974464742084215,False,2.0079545401799823,2.0,True,restored(all layers),restored(14 vars),42000128
+gaussian_c2_s0.001,2,0,AEP,A_full_state,decoy_series,0.23842318372050106,0.9862411864499813,False,2.0079545401799823,1.6353488843703337,True,restored(all layers),restored(14 vars),42000128
+gaussian_c2_s0.001,2,0,AEP,B_realistic,true_series,0.3935365687454513,0.9222643805761742,False,2.0079545401799823,2.0,True,public-init,fresh,42000128
+gaussian_c2_s0.001,2,0,AEP,B_realistic,decoy_series,0.3919895405840286,0.9228744127334866,False,2.0079545401799823,2.0000000000000004,True,public-init,fresh,42000128
+gaussian_c2_s0.001,2,0,AEP,ablate_weights_only,true_series,0.2101915545678389,0.9778297743299581,False,2.0079545401799823,2.000000000000001,True,restored(all layers),fresh,42000128
+gaussian_c2_s0.001,2,0,AEP,ablate_weights_only,decoy_series,0.21057035528990484,0.9777497649138943,False,2.0079545401799823,2.0000000000000004,True,restored(all layers),fresh,42000128
+gaussian_c2_s0.001,2,0,AEP,ablate_optimizer_only,true_series,0.3479109613399747,0.9392461510587383,False,2.0079545401799823,2.0,True,public-init,restored(14 vars),42000128
+gaussian_c2_s0.001,2,0,AEP,ablate_optimizer_only,decoy_series,0.45308131740085056,0.9100474859066615,False,2.0079545401799823,1.4599874549240772,True,public-init,restored(14 vars),42000128
+gaussian_c2_s0.01,1,0,AEP,A_full_state,true_series,0.5740785208054945,0.8189734510352659,False,2.474778446766672,1.9850969956218725,True,restored(all layers),restored(2 vars),42000127
+gaussian_c2_s0.01,1,0,AEP,A_full_state,decoy_series,0.57453581868176,0.818629789756747,False,2.474778446766672,1.9871009624036076,True,restored(all layers),restored(2 vars),42000127
+gaussian_c2_s0.01,1,0,AEP,B_realistic,true_series,0.5740785208054945,0.8189734510352659,False,2.474778446766672,1.9850969956218725,True,public-init,fresh,42000127
+gaussian_c2_s0.01,1,0,AEP,B_realistic,decoy_series,0.57453581868176,0.818629789756747,False,2.474778446766672,1.9871009624036076,True,public-init,fresh,42000127
+gaussian_c2_s0.01,1,0,AEP,ablate_weights_only,true_series,0.5740785208054945,0.8189734510352659,False,2.474778446766672,1.9850969956218725,True,restored(all layers),fresh,42000127
+gaussian_c2_s0.01,1,0,AEP,ablate_weights_only,decoy_series,0.57453581868176,0.818629789756747,False,2.474778446766672,1.9871009624036076,True,restored(all layers),fresh,42000127
+gaussian_c2_s0.01,1,0,AEP,ablate_optimizer_only,true_series,0.5740785208054945,0.8189734510352659,False,2.474778446766672,1.9850969956218725,True,public-init,restored(2 vars),42000127
+gaussian_c2_s0.01,1,0,AEP,ablate_optimizer_only,decoy_series,0.57453581868176,0.818629789756747,False,2.474778446766672,1.9871009624036076,True,public-init,restored(2 vars),42000127
+gaussian_c2_s0.01,2,0,AEP,A_full_state,true_series,0.5698789715845968,0.8217948479491285,False,2.4649866052730074,2.0000000000000004,True,restored(all layers),restored(14 vars),42000128
+gaussian_c2_s0.01,2,0,AEP,A_full_state,decoy_series,0.6018953053891773,0.8121677814864571,False,2.4649866052730074,1.6372441067528583,True,restored(all layers),restored(14 vars),42000128
+gaussian_c2_s0.01,2,0,AEP,B_realistic,true_series,0.6478824276850071,0.7632578263647996,False,2.4649866052730074,2.000000000000001,True,public-init,fresh,42000128
+gaussian_c2_s0.01,2,0,AEP,B_realistic,decoy_series,0.64727481870158,0.7637427811604104,False,2.4649866052730074,2.0,True,public-init,fresh,42000128
+gaussian_c2_s0.01,2,0,AEP,ablate_weights_only,true_series,0.5941702273287017,0.8043697240406364,False,2.4649866052730074,2.0000000000000004,True,restored(all layers),fresh,42000128
+gaussian_c2_s0.01,2,0,AEP,ablate_weights_only,decoy_series,0.5939095233970816,0.8045605984679396,False,2.4649866052730074,2.0000000000000004,True,restored(all layers),fresh,42000128
+gaussian_c2_s0.01,2,0,AEP,ablate_optimizer_only,true_series,0.6333130567913815,0.7747608171261998,False,2.4649866052730074,2.000000000000001,True,public-init,restored(14 vars),42000128
+gaussian_c2_s0.01,2,0,AEP,ablate_optimizer_only,decoy_series,0.6794459419209241,0.7498571008420806,False,2.4649866052730074,1.4670513364145312,True,public-init,restored(14 vars),42000128

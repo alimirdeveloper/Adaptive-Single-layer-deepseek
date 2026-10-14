@@ -1,0 +1,9 @@
+config,round,client_id,client_name,knowledge,role,rel_l2,cosine,bit_equal,obs_l2,pred_l2,seeded,restore_weights,restore_optimizer,fit_seed
+none,1,0,AEP,A_full_state,true_series,0.029976175630231132,0.9995509207355611,False,1.9631898464733946,1.9638468494489687,False,restored(all layers),restored(2 vars),
+none,1,0,AEP,A_full_state,decoy_series,0.039522706591229084,0.9992206493230373,False,1.9631898464733946,1.9577578878267883,False,restored(all layers),restored(2 vars),
+none,1,0,AEP,B_realistic,true_series,1.4896128687643069,-0.0519537513790009,False,1.9631898464733946,2.0678810061418385,False,public-init,fresh,
+none,1,0,AEP,B_realistic,decoy_series,1.4497621465228063,-0.01115330905589353,False,1.9631898464733946,2.0389247151689758,False,public-init,fresh,
+none,2,0,AEP,A_full_state,true_series,0.012600149665828881,0.9999206476107296,False,2.263825406324255,2.26422421633823,False,restored(all layers),restored(14 vars),
+none,2,0,AEP,A_full_state,decoy_series,0.4773860172342267,0.9752261253628763,False,2.263825406324255,1.2500514720387548,False,restored(all layers),restored(14 vars),
+none,2,0,AEP,B_realistic,true_series,1.2849506707786387,0.0811566466456428,False,2.263825406324255,2.0196361174775928,False,public-init,fresh,
+none,2,0,AEP,B_realistic,decoy_series,1.3577966632425231,-0.008604554771580755,False,2.263825406324255,2.0598981151623685,False,public-init,fresh,

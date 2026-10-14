@@ -1,0 +1,3 @@
+config,dp_method,dp_clip,dp_sigma,active,rounds_completed,final_mape,best_mape,final_mae,participants_last
+clip_only_c2,clip_only,2.0,0.0,True,2,99.89569346110027,99.89569346110027,10051.459228515625,3
+gaussian_c2_s0.01,gaussian,2.0,0.01,True,2,99.88315073649089,99.88315073649089,10050.471598307291,3

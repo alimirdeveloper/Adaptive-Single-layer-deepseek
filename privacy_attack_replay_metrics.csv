@@ -1,0 +1,5 @@
+config,round,client_id,client_name,knowledge,role,rel_l2,cosine,bit_equal,obs_l2,pred_l2,seeded,restore_weights,restore_optimizer,fit_seed
+none,1,1,COMED,A_full_state,true_series,0.0,1.0,True,2.0070805899440676,2.0070805899440676,True,restored(all layers),restored(2 vars),42001136
+none,1,1,COMED,A_full_state,decoy_series,0.03799623363110191,0.9992896760488488,False,2.0070805899440676,2.015399165383378,True,restored(all layers),restored(2 vars),42001136
+none,1,1,COMED,B_realistic,true_series,1.3589027869640697,0.036984458419564575,False,2.0070805899440676,1.922472649890487,True,public-init,fresh,42001136
+none,1,1,COMED,B_realistic,decoy_series,1.1916067582361913,0.3108833692850702,False,2.0070805899440676,2.0665202517101267,True,public-init,fresh,42001136
