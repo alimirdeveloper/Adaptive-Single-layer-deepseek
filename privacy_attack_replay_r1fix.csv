@@ -1,0 +1,21 @@
+config,round,client_id,client_name,knowledge,role,rel_l2,cosine,bit_equal,obs_l2,pred_l2,seeded,restore_weights,restore_optimizer,fit_seed
+none,1,0,AEP,A_full_state,true_series,0.0,1.0,True,2.09474878665129,2.09474878665129,True,restored(all layers),restored(2 vars),42000127
+none,1,0,AEP,A_full_state,decoy_series,0.028920417762063808,0.9996183318470393,False,2.09474878665129,2.0760272546528316,True,restored(all layers),restored(2 vars),42000127
+none,1,0,AEP,B_realistic,true_series,0.0,1.0,True,2.09474878665129,2.09474878665129,True,public-init,fresh,42000127
+none,1,0,AEP,B_realistic,decoy_series,0.028920417762063808,0.9996183318470393,False,2.09474878665129,2.0760272546528316,True,public-init,fresh,42000127
+none,1,1,COMED,A_full_state,true_series,0.0,1.0,True,1.9801387575831724,1.9801387575831724,True,restored(all layers),restored(2 vars),42001136
+none,1,1,COMED,A_full_state,decoy_series,0.03154419659214435,0.9995032401025008,False,1.9801387575831724,1.976525681058821,True,restored(all layers),restored(2 vars),42001136
+none,1,1,COMED,B_realistic,true_series,0.0,1.0,True,1.9801387575831724,1.9801387575831724,True,public-init,fresh,42001136
+none,1,1,COMED,B_realistic,decoy_series,0.03154419659214435,0.9995032401025008,False,1.9801387575831724,1.976525681058821,True,public-init,fresh,42001136
+none,1,2,DAYTON,A_full_state,true_series,0.0,1.0,True,2.1266694183432566,2.1266694183432566,True,restored(all layers),restored(2 vars),42002145
+none,1,2,DAYTON,A_full_state,decoy_series,0.02893027811367529,0.999590194250015,False,2.1266694183432566,2.1168969705355587,True,restored(all layers),restored(2 vars),42002145
+none,1,2,DAYTON,B_realistic,true_series,0.0,1.0,True,2.1266694183432566,2.1266694183432566,True,public-init,fresh,42002145
+none,1,2,DAYTON,B_realistic,decoy_series,0.02893027811367529,0.999590194250015,False,2.1266694183432566,2.1168969705355587,True,public-init,fresh,42002145
+none,1,3,DEOK,A_full_state,true_series,0.0,1.0000000000000002,True,2.0030615664870766,2.0030615664870766,True,restored(all layers),restored(2 vars),42003154
+none,1,3,DEOK,A_full_state,decoy_series,0.028351612610862317,0.9995981598961606,False,2.0030615664870766,2.001168336380467,True,restored(all layers),restored(2 vars),42003154
+none,1,3,DEOK,B_realistic,true_series,0.0,1.0000000000000002,True,2.0030615664870766,2.0030615664870766,True,public-init,fresh,42003154
+none,1,3,DEOK,B_realistic,decoy_series,0.028351612610862317,0.9995981598961606,False,2.0030615664870766,2.001168336380467,True,public-init,fresh,42003154
+none,1,4,DOM,A_full_state,true_series,0.0,1.0000000000000002,True,2.1526916629387514,2.1526916629387514,True,restored(all layers),restored(2 vars),42004163
+none,1,4,DOM,A_full_state,decoy_series,0.026387587568059086,0.9996562138540901,False,2.1526916629387514,2.1583558730668573,True,restored(all layers),restored(2 vars),42004163
+none,1,4,DOM,B_realistic,true_series,0.0,1.0000000000000002,True,2.1526916629387514,2.1526916629387514,True,public-init,fresh,42004163
+none,1,4,DOM,B_realistic,decoy_series,0.026387587568059086,0.9996562138540901,False,2.1526916629387514,2.1583558730668573,True,public-init,fresh,42004163

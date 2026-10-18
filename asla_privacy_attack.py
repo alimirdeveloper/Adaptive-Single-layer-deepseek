@@ -344,6 +344,22 @@ def derive_seed(base_seed, client_id, round_index):
     return (int(base_seed) * 1000003 + int(client_id) * 1009
             + int(round_index)) % (2 ** 31 - 1)
 
+def derive_build_seed(base_seed, client_id):
+    """Public, reproducible per-client MODEL-BUILD seed.
+
+    A client's initial weights are drawn at model-construction time from
+    Python's `random` (see `seed_for_build`), so the build must be seeded
+    explicitly per client - otherwise the clients consume one shared stream and
+    only the FIRST-built client is reproducible by a single-model replay.
+
+    Round index 0 is never a fit round (fit rounds are 1-based in
+    RecordingClient.train_local), so this cannot collide with the
+    per-(client, round) fit seed above.  The recorded pass and the replay both
+    call this function, so both derive the build seed from the same base seed
+    and client id.
+    """
+    return derive_seed(base_seed, client_id, 0)
+
 # ---------------------------------------------------------------------------
 # PART 4: SMALL ARRAY HELPERS (shape-agnostic, kernel+bias flattened)
 # ---------------------------------------------------------------------------
@@ -592,8 +608,10 @@ def replay_update(record, data, layer_idx, knowledge, seed_shim=True,
     # Seeded construction: the attacker can rebuild the same untrained model.
     # seed_for_build also seeds Python's random, which is where Keras 3 draws
     # the initial weights from - tf.random.set_seed alone would not reproduce
-    # the attacker's own model.
-    seed_for_build(build_seed)
+    # the attacker's own model.  This is the SAME public per-client build seed
+    # the recorded pass used, so it rebuilds THIS client's model (not just the
+    # first-built one).
+    seed_for_build(derive_build_seed(build_seed, record['client_id']))
     client = RecordingClient(
         record['client_id'], X_train, y_train, X_test, y_test,
         name=record.get('name', ''), quant_bits=32,
@@ -726,6 +744,11 @@ def run_config_pass(series, victim_indices, client_names, cfg, args, layer):
     clients = []
     for i in victim_indices:
         X_train, y_train, X_test, y_test = series[i]
+        # Public per-client build seed: each client's initial weights must be a
+        # deterministic function of (build seed, client id) so the replay can
+        # rebuild THIS client's untrained model.  A single shared seed would
+        # only ever reproduce the first-built client.
+        seed_for_build(derive_build_seed(args.build_seed, i))
         clients.append(RecordingClient(
             i, X_train, y_train, X_test, y_test, name=client_names[i],
             quant_bits=args.quant_bits, dp_clip=dp_clip, dp_sigma=dp_sigma,
