@@ -1,0 +1,22 @@
+﻿COPY paragraphs = 1200   tables = 10
+
+=== Heading outline of the whole document ===
+p121   Heading 1  
+p122   Heading 1  ┌å┌⌐█î╪»┘ç:
+p135   Heading 1  ┘ü╪╡┘ä ╪º┘ê┘ä
+p137   Heading 2  ┌⌐┘ä█î╪º╪¬ ╪¬╪¡┘é█î┘é
+p262   Heading 1  ┘ü╪╡┘ä ╪»┘ê┘à
+p264   Heading 2  ┘à╪▒┘ê╪▒█î ╪¿╪▒ ╪º╪»╪¿█î╪º╪¬ ╪¬╪¡┘é█î┘é
+p610   Heading 1  
+p760   Heading 1  ┘ü╪╡┘ä ╪│┘ê┘à
+p761   Heading 2  ╪▒┘ê╪┤ ╪¬╪¡┘é█î┘é
+p1010  Heading 2  █î╪º┘ü╪¬┘çΓÇî┘ç╪º█î ╪¬╪¡┘é█î┘é
+p1096  Heading 1  ┘ü╪╡┘ä ┘╛┘å╪¼┘à
+p1098  Heading 2  ┘å╪¬█î╪¼┘çΓÇî┌»█î╪▒█î ┘ê ┘╛█î╪┤┘å┘ç╪º╪»╪º╪¬
+p1177  Heading 1  ┘ü┘ç╪▒╪│╪¬ ┘à┘å╪º╪¿╪╣ ┘ê ┘à╪ó╪«╪░
+
+=== headings per source document (for comparison) ===
+ORIGINAL paragraphs=1050 tables=6
+    {'Caption': 16, 'Heading 1': 9, 'Heading 2': 5, 'Heading 3': 37, 'Heading 4': 46, 'Heading 5': 3, 'Normal': 550}
+
+VERIFY DONE

@@ -1,0 +1,4 @@
+﻿A_range_end_prev       FAILED '<win32com.gen_py.Microsoft Word 16.0 Object Library.Paragraph instance at 0x1346787278704>' object has no attribute 'Start'
+B_para_insertbefore    inserted-para=(859, 'Heading 1')  ch4 H1 at [860]
+   ch4 text now = '┘ü╪╡┘ä ┌å┘ç╪º╪▒┘à                              \r'
+C_collapse_prev        FAILED (-2147023170, 'The remote procedure call failed.', None, None)

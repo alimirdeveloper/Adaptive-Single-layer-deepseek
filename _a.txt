@@ -1,0 +1,13 @@
+﻿ORIG = C:\Users\Asus\Desktop\uni\proposal git\┘╛╪▒┘ê┘╛┘ê╪▓╪º┘ä.docx
+COPY = C:\Users\Asus\Desktop\uni\proposal git\┘╛╪▒┘ê┘╛┘ê╪▓╪º┘ä_┘ü╪╡┘ä█│.docx
+paragraphs = 1050
+H1 Ch3 at p760 | H1 Ch4 at p858
+Ch3 heading span : [271466, 271567)
+delete span      : [271466, 277789)
+deleting [271466,277789) = 6323 chars, 98 paragraphs
+  tables=0 inlineShapes=0
+paragraphs now = 951
+after insert, p760 raw = '┘ü╪╡┘ä ┌å┘ç╪º╪▒┘à\r'  len=10
+expected len = 10 | CH4H = ┘ü╪╡┘ä ┌å┘ç╪º╪▒┘à
+recreated p760: [Heading 1] '┘ü╪╡┘ä ┌å┘ç╪º╪▒┘à\r'
+STEP A OK

@@ -1,0 +1,10 @@
+﻿Ch4 at p858 start=277749 end=277789 style=Heading 1 text='┘ü╪╡┘ä ┌å┘ç╪º╪▒┘à                              \r'
+prev p857 start=277630 end=277749 style=Normal text='                             \r'
+
+char at (ch4-1): '\r'
+char at (ch4)  : '┘ü'
+
+-- Range(277748,277748) belongs to paragraph style Normal, text/2='\x0c                        '
+
+-- Range(277749,277749) belongs to paragraph style Heading 1, text/2='┘ü╪╡┘ä ┌å┘ç╪º╪▒┘à                '
+done
