@@ -1,0 +1,99 @@
+57d25c7 2026-10-19 10:50:43 +0330 continue proposal code
+60560e6 2026-10-18 16:56:43 +0330 working on results
+7624253 2026-10-14 09:41:09 +0330 implementing asla attack simulation
+7ceaae0 2026-10-14 09:30:28 +0330 cline checkpoint session=1791782011611_3pqf2 run=32
+0b0c224 2026-10-14 09:30:28 +0330 index on cline checkpoint
+75a3854 2026-10-14 09:30:28 +0330 untracked files on cline checkpoint
+99fea1d 2026-10-14 09:22:27 +0330 cline checkpoint session=1791782011611_3pqf2 run=31
+04abddb 2026-10-14 09:22:27 +0330 index on cline checkpoint
+423319a 2026-10-14 09:22:27 +0330 untracked files on cline checkpoint
+8e6be31 2026-10-14 09:14:49 +0330 cline checkpoint session=1791782011611_3pqf2 run=30
+d39e969 2026-10-14 09:14:49 +0330 index on cline checkpoint
+1d3d5de 2026-10-14 09:14:49 +0330 untracked files on cline checkpoint
+9392083 2026-10-14 08:58:22 +0330 cline checkpoint session=1791782011611_3pqf2 run=29
+3a280ba 2026-10-14 08:58:22 +0330 index on cline checkpoint
+af669a4 2026-10-14 08:58:22 +0330 untracked files on cline checkpoint
+e7f552f 2026-10-14 08:52:30 +0330 cline checkpoint session=1791782011611_3pqf2 run=28
+abe8842 2026-10-14 08:52:30 +0330 index on cline checkpoint
+fdacb0b 2026-10-14 08:52:30 +0330 untracked files on cline checkpoint
+a8b2de7 2026-10-14 08:36:47 +0330 cline checkpoint session=1791782011611_3pqf2 run=27
+10fc91e 2026-10-14 08:36:47 +0330 index on cline checkpoint
+f2411b6 2026-10-14 08:36:47 +0330 untracked files on cline checkpoint
+7d2ffcc 2026-10-13 13:39:42 +0330 feat(asla_complete): add optional DP and deterministic PJM loading
+39dca2c 2026-10-13 08:48:16 +0330 cline checkpoint session=1791782011611_3pqf2 run=25
+12345f4 2026-10-13 08:48:16 +0330 untracked files on cline checkpoint
+c2a39fa 2026-10-13 08:48:15 +0330 index on refactor-02: 9c4542b last upate
+4213f73 2026-10-13 08:43:08 +0330 cline checkpoint session=1791782011611_3pqf2 run=24
+1ad4332 2026-10-13 08:43:08 +0330 index on refactor-02: 9c4542b last upate
+f74869c 2026-10-13 08:43:08 +0330 untracked files on cline checkpoint
+70fc571 2026-10-13 08:20:43 +0330 cline checkpoint session=1791782011611_3pqf2 run=23
+d9aa2f1 2026-10-13 08:20:43 +0330 index on refactor-02: 9c4542b last upate
+01c00ac 2026-10-13 08:20:43 +0330 untracked files on cline checkpoint
+138cf0a 2026-10-12 16:34:23 +0330 cline checkpoint session=1791782011611_3pqf2 run=22
+662f7de 2026-10-12 16:34:23 +0330 untracked files on cline checkpoint
+4fd1a84 2026-10-12 16:34:22 +0330 index on refactor-02: 9c4542b last upate
+027d73b 2026-10-12 16:23:25 +0330 cline checkpoint session=1791782011611_3pqf2 run=21
+ec0426e 2026-10-12 16:23:25 +0330 index on refactor-02: 9c4542b last upate
+cfec309 2026-10-12 16:23:25 +0330 untracked files on cline checkpoint
+0ae5ff4 2026-10-12 16:16:25 +0330 cline checkpoint session=1791782011611_3pqf2 run=20
+573217a 2026-10-12 16:16:24 +0330 index on refactor-02: 9c4542b last upate
+8acc3d5 2026-10-12 16:16:24 +0330 untracked files on cline checkpoint
+ad13e2a 2026-10-12 16:04:42 +0330 cline checkpoint session=1791782011611_3pqf2 run=19
+0b91b47 2026-10-12 16:04:42 +0330 index on refactor-02: 9c4542b last upate
+f062974 2026-10-12 16:04:42 +0330 untracked files on cline checkpoint
+938901c 2026-10-12 16:00:35 +0330 cline checkpoint session=1791782011611_3pqf2 run=18
+5f272cf 2026-10-12 16:00:35 +0330 index on refactor-02: 9c4542b last upate
+e21900b 2026-10-12 16:00:35 +0330 untracked files on cline checkpoint
+92423d3 2026-10-12 15:53:35 +0330 cline checkpoint session=1791782011611_3pqf2 run=17
+19b4586 2026-10-12 15:53:35 +0330 untracked files on cline checkpoint
+a27c66f 2026-10-12 15:53:34 +0330 index on refactor-02: 9c4542b last upate
+035e621 2026-10-12 15:42:47 +0330 cline checkpoint session=1791782011611_3pqf2 run=16
+ef0a4bb 2026-10-12 15:42:47 +0330 index on refactor-02: 9c4542b last upate
+1211b9e 2026-10-12 15:42:47 +0330 untracked files on cline checkpoint
+5e54532 2026-10-12 15:40:48 +0330 cline checkpoint session=1791782011611_3pqf2 run=15
+2bcedba 2026-10-12 15:40:48 +0330 untracked files on cline checkpoint
+c5bf75a 2026-10-12 15:40:47 +0330 index on refactor-02: 9c4542b last upate
+1820505 2026-10-12 15:33:53 +0330 cline checkpoint session=1791782011611_3pqf2 run=14
+3d531da 2026-10-12 15:33:53 +0330 index on refactor-02: 9c4542b last upate
+5c9d83a 2026-10-12 15:33:53 +0330 untracked files on cline checkpoint
+8707d6f 2026-10-12 15:30:03 +0330 cline checkpoint session=1791782011611_3pqf2 run=13
+355a13f 2026-10-12 15:30:03 +0330 index on refactor-02: 9c4542b last upate
+664f966 2026-10-12 15:30:03 +0330 untracked files on cline checkpoint
+55c93be 2026-10-12 15:21:53 +0330 cline checkpoint session=1791782011611_3pqf2 run=12
+9ec9f19 2026-10-12 15:21:53 +0330 index on refactor-02: 9c4542b last upate
+856c30a 2026-10-12 15:21:53 +0330 untracked files on cline checkpoint
+34474bc 2026-10-12 15:16:21 +0330 cline checkpoint session=1791782011611_3pqf2 run=11
+95b51f5 2026-10-12 15:16:21 +0330 index on refactor-02: 9c4542b last upate
+b84d266 2026-10-12 15:16:21 +0330 untracked files on cline checkpoint
+f61a939 2026-10-12 15:08:32 +0330 cline checkpoint session=1791782011611_3pqf2 run=10
+6b7376f 2026-10-12 15:08:32 +0330 untracked files on cline checkpoint
+dc6b3c1 2026-10-12 15:08:31 +0330 index on refactor-02: 9c4542b last upate
+3ed9bbf 2026-10-12 14:58:08 +0330 cline checkpoint session=1791782011611_3pqf2 run=9
+d703c52 2026-10-12 14:58:08 +0330 index on refactor-02: 9c4542b last upate
+b0f8b00 2026-10-12 14:58:08 +0330 untracked files on cline checkpoint
+c32c65b 2026-10-12 14:45:00 +0330 cline checkpoint session=1791782011611_3pqf2 run=8
+69717dc 2026-10-12 14:45:00 +0330 index on refactor-02: 9c4542b last upate
+aa5565f 2026-10-12 14:45:00 +0330 untracked files on cline checkpoint
+437f23f 2026-10-12 14:26:26 +0330 cline checkpoint session=1791782011611_3pqf2 run=7
+03006e6 2026-10-12 14:26:26 +0330 index on cline checkpoint
+3018efb 2026-10-12 14:26:26 +0330 untracked files on cline checkpoint
+507d339 2026-10-12 13:56:30 +0330 cline checkpoint session=1791782011611_3pqf2 run=6
+b9fd64f 2026-10-12 13:56:30 +0330 index on cline checkpoint
+4a90ff3 2026-10-12 13:56:30 +0330 untracked files on cline checkpoint
+a45aa90 2026-10-12 13:34:11 +0330 cline checkpoint session=1791782011611_3pqf2 run=5
+9fb64ca 2026-10-12 13:34:11 +0330 index on cline checkpoint
+9267348 2026-10-12 13:34:11 +0330 untracked files on cline checkpoint
+b2834eb 2026-10-12 13:21:20 +0330 cline checkpoint session=1791782011611_3pqf2 run=4
+97f2676 2026-10-12 13:21:20 +0330 index on cline checkpoint
+91f8a9b 2026-10-12 13:21:20 +0330 untracked files on cline checkpoint
+d8f94e4 2026-10-12 09:06:27 +0330 cline checkpoint session=1791782011611_3pqf2 run=3
+2ccdfb9 2026-10-12 09:06:26 +0330 index on cline checkpoint
+119fc2d 2026-10-12 09:06:26 +0330 untracked files on cline checkpoint
+3e15487 2026-10-12 08:55:22 +0330 cline checkpoint session=1791782011611_3pqf2 run=2
+63da56d 2026-10-12 08:55:22 +0330 index on cline checkpoint
+a6c8f18 2026-10-12 08:55:22 +0330 untracked files on cline checkpoint
+9c4542b 2026-10-12 08:39:53 +0330 last upate
+4f1de1a 2026-07-05 18:09:55 +0330 add persian comments
+775409d 2026-06-14 17:41:33 +0330 add compare with fedavg
+b15fe66 2026-06-14 17:24:20 +0330 get result better in other degradation
+aeaaded 2026-06-14 16:40:37 +0330 first commit

@@ -1,0 +1,32 @@
+﻿python : WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+At line:1 char:50
++ ... l\Adaptive-Single-layer-deepseek'; python _audit_data.py 2>&1 | Out-F ...
++                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARNING: All lo...itten to STDERR:String) [], RemoteE 
+   xception
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+I0000 00:00:1792413258.194872    7884 port.cc:153] oneDNN custom operations are on. You may see 
+slightly different numerical results due to floating-point round-off errors from different 
+computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1792413259.787831    7884 port.cc:153] oneDNN custom operations are on. You may see 
+slightly different numerical results due to floating-point round-off errors from different 
+computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+
+Scanning 40 CSV files...
+  sorted AEP_hourly.csv ascending by 'Datetime'
+Traceback (most recent call last):
+  File "D:\proposal\Adaptive-Single-layer-deepseek\_audit_data.py", line 14, in <module>
+    data, names = load_pjm_multiple_files('.')
+                  ~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "D:\proposal\Adaptive-Single-layer-deepseek\asla_complete.py", line 96, in 
+load_pjm_multiple_files
+    print(f"  \u2713 {csv_file} -> {len(values)} readings")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py", line 19, 
+in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2713' in position 2: character maps 
+to <undefined>

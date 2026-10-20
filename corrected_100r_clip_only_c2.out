@@ -1,0 +1,181 @@
+============================================================
+ASLA BASELINE (single-layer, DP: clip-only (no noise))
+============================================================
+============================================================
+FILE STRUCTURE ANALYSIS
+============================================================
+
+  AEP_hourly.csv
+   Columns: ['Datetime', 'AEP_MW']
+----------------------------------------
+
+  COMED_hourly.csv
+   Columns: ['Datetime', 'COMED_MW']
+----------------------------------------
+
+  DAYTON_hourly.csv
+   Columns: ['Datetime', 'DAYTON_MW']
+----------------------------------------
+
+  DEOK_hourly.csv
+   Columns: ['Datetime', 'DEOK_MW']
+----------------------------------------
+
+  DOM_hourly.csv
+   Columns: ['Datetime', 'DOM_MW']
+----------------------------------------
+
+Scanning 9 utility series (PJM aggregates and pjm_hourly_est.csv are excluded)...
+  AEP       121269 readings  2004-10-01 01:00:00 .. 2018-08-03 00:00:00
+  COMED      66493 readings  2011-01-01 01:00:00 .. 2018-08-03 00:00:00
+  DAYTON    121271 readings  2004-10-01 01:00:00 .. 2018-08-03 00:00:00
+  DEOK       57735 readings  2012-01-01 01:00:00 .. 2018-08-03 00:00:00
+  DOM       116185 readings  2005-05-01 01:00:00 .. 2018-08-03 00:00:00
+  DUQ       119064 readings  2005-01-01 01:00:00 .. 2018-08-03 00:00:00
+  EKPC       45330 readings  2013-06-01 01:00:00 .. 2018-08-03 00:00:00
+  FE         62870 readings  2011-06-01 01:00:00 .. 2018-08-03 00:00:00
+  NI         58450 readings  2004-05-01 01:00:00 .. 2011-01-01 00:00:00
+  EXCLUDED NI: ends 2011-01-01 00:00:00, before the others begin - no shared interval
+
+  shared interval  : 2013-06-01 01:00:00 .. 2018-08-03 00:00:00
+  sampling         : hourly (45336 hours)
+  clients          : 8 -> AEP, COMED, DAYTON, DEOK, DOM, DUQ, EKPC, FE
+  missing hours    : AEP=7, COMED=6, DAYTON=6, DEOK=6, DOM=6, DUQ=6, EKPC=6, FE=6
+  data shape       : (45336, 8)
+  client 0: AEP  train=31617  test=13551
+  client 1: COMED  train=31617  test=13551
+  client 2: DAYTON  train=31617  test=13551
+  client 3: DEOK  train=31617  test=13551
+  client 4: DOM  train=31617  test=13551
+  client 5: DUQ  train=31617  test=13551
+  client 6: EKPC  train=31617  test=13551
+  client 7: FE  train=31617  test=13551
+
+  selected clients (8, sorted): AEP, COMED, DAYTON, DEOK, DOM, DUQ, EKPC, FE
+
+  clients used     : 8
+  selected layer   : model.layers[1] = layer2 (5050 params)
+  quantization     : 32-bit
+  rounds requested : 100
+  local epochs     : 1   batch size: 300   optimizer: Adam(1e-3)
+  evaluation       : mean client-level MAPE and MAE (Stage 1B)
+  note             : MAPE is a personalised-hybrid metric (docstring, B5)
+  DP diagnostics   : ON -> D:\proposal\Adaptive-Single-layer-deepseek\corrected_dp_diag_clip_only_c2.csv
+  Round 1: MAPE = 99.86% (8 clients)
+  Round 2: MAPE = 99.10% (8 clients)
+  Round 3: MAPE = 96.77% (8 clients)
+  Round 4: MAPE = 91.64% (8 clients)
+  Round 5: MAPE = 82.96% (8 clients)
+  Round 6: MAPE = 72.50% (8 clients)
+  Round 7: MAPE = 63.08% (8 clients)
+  Round 8: MAPE = 54.98% (8 clients)
+  Round 9: MAPE = 47.99% (8 clients)
+  Round 10: MAPE = 41.69% (8 clients)
+  Round 11: MAPE = 36.02% (8 clients)
+  Round 12: MAPE = 31.11% (8 clients)
+  Round 13: MAPE = 27.46% (8 clients)
+  Round 14: MAPE = 24.89% (8 clients)
+  Round 15: MAPE = 22.97% (8 clients)
+  Round 16: MAPE = 21.32% (8 clients)
+  Round 17: MAPE = 19.80% (8 clients)
+  Round 18: MAPE = 18.39% (8 clients)
+  Round 19: MAPE = 17.09% (8 clients)
+  Round 20: MAPE = 15.80% (8 clients)
+  Round 21: MAPE = 14.46% (8 clients)
+  Round 22: MAPE = 13.08% (8 clients)
+  Round 23: MAPE = 11.66% (8 clients)
+  Round 24: MAPE = 10.25% (8 clients)
+  Round 25: MAPE = 8.88% (8 clients)
+  Round 26: MAPE = 7.60% (8 clients)
+  Round 27: MAPE = 6.52% (8 clients)
+  Round 28: MAPE = 5.64% (8 clients)
+  Round 29: MAPE = 4.97% (8 clients)
+  Round 30: MAPE = 4.46% (8 clients)
+  Round 31: MAPE = 4.08% (8 clients)
+  Round 32: MAPE = 3.79% (8 clients)
+  Round 33: MAPE = 3.59% (8 clients)
+  Round 34: MAPE = 3.44% (8 clients)
+  Round 35: MAPE = 3.33% (8 clients)
+  Round 36: MAPE = 3.25% (8 clients)
+  Round 37: MAPE = 3.19% (8 clients)
+  Round 38: MAPE = 3.15% (8 clients)
+  Round 39: MAPE = 3.13% (8 clients)
+  Round 40: MAPE = 3.11% (8 clients)
+  Round 41: MAPE = 3.09% (8 clients)
+  Round 42: MAPE = 3.08% (8 clients)
+  Round 43: MAPE = 3.07% (8 clients)
+  Round 44: MAPE = 3.07% (8 clients)
+  Round 45: MAPE = 3.06% (8 clients)
+  Round 46: MAPE = 3.06% (8 clients)
+  Round 47: MAPE = 3.06% (8 clients)
+  Round 48: MAPE = 3.05% (8 clients)
+  Round 49: MAPE = 3.05% (8 clients)
+  Round 50: MAPE = 3.05% (8 clients)
+  Round 51: MAPE = 3.05% (8 clients)
+  Round 52: MAPE = 3.05% (8 clients)
+  Round 53: MAPE = 3.05% (8 clients)
+  Round 54: MAPE = 3.05% (8 clients)
+  Round 55: MAPE = 3.05% (8 clients)
+  Round 56: MAPE = 3.05% (8 clients)
+  Round 57: MAPE = 3.05% (8 clients)
+  Round 58: MAPE = 3.05% (8 clients)
+  Round 59: MAPE = 3.05% (8 clients)
+  Round 60: MAPE = 3.05% (8 clients)
+  Round 61: MAPE = 3.05% (8 clients)
+  Round 62: MAPE = 3.05% (8 clients)
+  Round 63: MAPE = 3.06% (7 clients)
+  Round 64: MAPE = 3.06% (6 clients)
+  Round 65: MAPE = 3.06% (6 clients)
+  Round 66: MAPE = 3.06% (6 clients)
+  Round 67: MAPE = 3.06% (6 clients)
+  Round 68: MAPE = 3.06% (6 clients)
+  Round 69: MAPE = 3.06% (6 clients)
+  Round 70: MAPE = 3.07% (6 clients)
+  Round 71: MAPE = 3.07% (6 clients)
+  Round 72: MAPE = 3.07% (6 clients)
+  Round 73: MAPE = 3.07% (6 clients)
+============================================================
+ASLA BASELINE RESULTS (Stage 1B)
+============================================================
+  data folder        : D:\proposal\Adaptive-Single-layer-deepseek
+  shared interval    : 2013-06-01 01:00:00 .. 2018-08-03 00:00:00
+  sampling           : hourly (45336 hours)
+  excluded series    : NI (aggregates / duplicates / no shared interval)
+  selected clients   : AEP, COMED, DAYTON, DEOK, DOM, DUQ, EKPC, FE
+  selected layer     : model.layers[1] = layer2 (5050 params)
+  quantization       : 32-bit
+  client-side DP     : method=clip_only, clip=2.0, sigma=0.0 (ON, clip-only - NO Gaussian noise)
+  DP scope           : per-round local mechanism only - no
+                       end-to-end privacy accounting.
+  clip-only caveat   : this arm clips the update norm but
+                       adds NO noise and gives NO DP
+                       guarantee - ablation control only.
+  local epochs=1, batch size=300, optimizer=Adam(1e-3)
+  rounds requested   : 100
+  rounds completed   : 73
+  final MAPE         : 3.07%
+  best  MAPE         : 3.05% (round 54)
+  last 5 MAPE        : 3.06, 3.07, 3.07, 3.07, 3.07
+  final MAE          : 192.5119
+  fresh clients/round: [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6]
+  note               : MAPE/MAE are the mean over personalised-hybrid
+                       client models (B5), NOT one fully global model.
+  MAPE policy        : Keras MAPE is already a percentage; every
+                       client load is > 500 MW, so no near-zero
+                       denominator occurs and no clipping is applied.
+
+  per-client final metrics (personalised hybrid, held-out test):
+    client      MAPE %        MAE            MSE   train    test
+    AEP           2.59     377.23       228363.3   31617   13551
+    COMED         2.87     321.55       176724.8   31617   13551
+    DAYTON        3.02      59.43         5775.8   31617   13551
+    DEOK          3.24      95.09        16362.7   31617   13551
+    DOM           3.46     386.33       232812.1   31617   13551
+    DUQ           2.73      42.56         2968.4   31617   13551
+    EKPC          4.03      57.97         5338.9   31617   13551
+    FE            2.62     199.93        66873.5   31617   13551
+
+  results saved to   : D:\proposal\Adaptive-Single-layer-deepseek\corrected_100r_clip_only_c2.txt
+  JSON saved to      : D:\proposal\Adaptive-Single-layer-deepseek\corrected_100r_clip_only_c2.json
+
+  DP diagnostics saved: D:\proposal\Adaptive-Single-layer-deepseek\corrected_dp_diag_clip_only_c2.csv (563 rows, 9 columns)

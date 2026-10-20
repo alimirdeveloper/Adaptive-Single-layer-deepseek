@@ -1,0 +1,411 @@
+﻿python : D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not 
+infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure 
+parsing is consistent and as-expected, please specify a format.
+At line:1 char:81
++ ... ; $env:PYTHONIOENCODING='utf-8'; python _audit_loader.py 2>&1 | Out-F ...
++                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (D:\proposal\Ada...ecify a format.:String) [], RemoteE 
+   xception
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+D:\proposal\Adaptive-Single-layer-deepseek\_audit_loader.py:21: UserWarning: Could not infer 
+format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing 
+is consistent and as-expected, please specify a format.
+  if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+file                                           rows  loader verdict
+AEP_hourly.csv                               121273  CLIENT via 'AEP_MW' (121273 values)
+COMED_hourly.csv                              66497  CLIENT via 'COMED_MW' (66497 values)
+DAYTON_hourly.csv                            121275  CLIENT via 'DAYTON_MW' (121275 values)
+DEOK_hourly.csv                               57739  CLIENT via 'DEOK_MW' (57739 values)
+DOM_hourly.csv                               116189  CLIENT via 'DOM_MW' (116189 values)
+DUQ_hourly.csv                               119068  CLIENT via 'DUQ_MW' (119068 values)
+EKPC_hourly.csv                               45334  CLIENT via 'EKPC_MW' (45334 values)
+FE_hourly.csv                                 62874  CLIENT via 'FE_MW' (62874 values)
+NI_hourly.csv                                 58450  CLIENT via 'NI_MW' (58450 values)
+PJME_hourly.csv                              145366  CLIENT via 'PJME_MW' (145366 values)
+PJMW_hourly.csv                              143206  CLIENT via 'PJMW_MW' (143206 values)
+PJM_Load_hourly.csv                           32896  CLIENT via 'PJM_Load_MW' (32896 values)
+pa_dp2_replay.csv                                16  skipped
+pa_dp2_utility.csv                                2  skipped
+pa_dp_replay.csv                                 16  skipped
+pa_dp_utility.csv                                 2  skipped
+pa_id_replay.csv                                  8  skipped
+pa_id_utility.csv                                 1  skipped
+pa_noshim2_replay.csv                             8  skipped
+pa_noshim2_utility.csv                            1  skipped
+pa_noshim_replay.csv                              8  skipped
+pa_noshim_utility.csv                             1  skipped
+pa_smoke3_replay.csv                             32  skipped
+pa_smoke3_utility.csv                             1  skipped
+pjm_hourly_est.csv                           178262  CLIENT via 'AEP' (121273 values)
+privacy_attack_identity.csv                       2  skipped
+privacy_attack_identity_4cfg_r3.csv              60  skipped
+privacy_attack_identity_final.csv                 8  skipped
+privacy_attack_replay_4cfg_r3.csv               240  skipped
+privacy_attack_replay_metrics.csv                 4  skipped
+privacy_attack_replay_metrics_final.csv          64  skipped
+privacy_attack_replay_metrics_sens1.csv         480  skipped
+privacy_attack_replay_metrics_victim1.csv        64  skipped
+privacy_attack_replay_r1fix.csv                  20  skipped
+privacy_attack_utility.csv                        1  skipped
+privacy_attack_utility_4cfg_r3.csv                4  skipped
+privacy_attack_utility_final.csv                  4  skipped
+privacy_attack_utility_r1fix.csv                  1  skipped
+privacy_attack_utility_sens1.csv                  4  skipped
+privacy_attack_utility_victim1.csv                4  skipped
+
+files that become clients: 13
+aligned window = min(values) capped at 13896 = 13896

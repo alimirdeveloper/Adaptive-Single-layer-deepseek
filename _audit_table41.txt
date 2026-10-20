@@ -1,0 +1,18 @@
+﻿
+=== AEP   document says mean=16067 sd=2549 min=9823 max=25695
+    full series    mean= 15500 sd= 2591 min=  9581 max= 25695  
+    first 13896    mean= 15735 sd= 2399 min=  9823 max= 24015  
+    last 13896     mean= 14782 sd= 2404 min=  9698 max= 22759  
+    middle 13896   mean= 15758 sd= 2448 min= 10308 max= 24597  
+=== COMED   document says mean=11521 sd=2399 min=7237 max=21753
+    full series    mean= 11420 sd= 2304 min=  7237 max= 23753  
+    first 13896    mean= 11734 sd= 2623 min=  7382 max= 23753  
+    last 13896     mean= 11204 sd= 2166 min=  7263 max= 21349  
+    middle 13896   mean= 11400 sd= 2052 min=  7237 max= 19765  
+=== DAYTON   document says mean=2126 sd=405 min=982 max=3746
+    full series    mean=  2038 sd=  393 min=   982 max=  3746  
+    first 13896    mean=  2097 sd=  379 min=  1202 max=  3722  
+    last 13896     mean=  2008 sd=  364 min=  1151 max=  3249  
+    middle 13896   mean=  1978 sd=  375 min=  1000 max=  3644  
+
+

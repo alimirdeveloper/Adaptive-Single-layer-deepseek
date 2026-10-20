@@ -1,0 +1,37 @@
+============================================================
+ASLA BASELINE RESULTS (Stage 1B)
+============================================================
+  data folder        : D:\proposal\Adaptive-Single-layer-deepseek
+  shared interval    : 2013-06-01 01:00:00 .. 2018-08-03 00:00:00
+  sampling           : hourly (45336 hours)
+  excluded series    : NI (aggregates / duplicates / no shared interval)
+  selected clients   : AEP, COMED, DAYTON, DEOK, DOM, DUQ, EKPC, FE
+  selected layer     : model.layers[1] = layer2 (5050 params)
+  quantization       : 32-bit
+  client-side DP     : method=none, clip=0.0, sigma=0.0 (OFF)
+  DP scope           : per-round local mechanism only - no
+                       end-to-end privacy accounting.
+  local epochs=1, batch size=300, optimizer=Adam(1e-3)
+  rounds requested   : 100
+  rounds completed   : 62
+  final MAPE         : 3.06%
+  best  MAPE         : 3.04% (round 40)
+  last 5 MAPE        : 3.05, 3.06, 3.06, 3.06, 3.06
+  final MAE          : 191.6820
+  fresh clients/round: [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 7, 7, 7, 7, 6, 6, 6]
+  note               : MAPE/MAE are the mean over personalised-hybrid
+                       client models (B5), NOT one fully global model.
+  MAPE policy        : Keras MAPE is already a percentage; every
+                       client load is > 500 MW, so no near-zero
+                       denominator occurs and no clipping is applied.
+
+  per-client final metrics (personalised hybrid, held-out test):
+    client      MAPE %        MAE            MSE   train    test
+    AEP           2.58     375.65       227606.4   31617   13551
+    COMED         2.84     319.00       175938.4   31617   13551
+    DAYTON        3.02      59.39         5755.6   31617   13551
+    DEOK          3.24      95.06        16073.6   31617   13551
+    DOM           3.44     385.26       232308.8   31617   13551
+    DUQ           2.74      42.55         2963.0   31617   13551
+    EKPC          4.01      57.78         5301.4   31617   13551
+    FE            2.60     198.77        66487.8   31617   13551

@@ -15,12 +15,18 @@ from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import os
 import argparse
+import json
+import random
 import warnings
 warnings.filterwarnings('ignore')
 
 # Set random seeds for reproducibility
 np.random.seed(42)
 tf.random.set_seed(42)
+# Keras 3's seedless initializers draw from Python's `random`, not from the
+# TF global RNG, so `--seed` must seed it too or the initial weights are not
+# reproducible across processes (measured in asla_privacy_attack.py).
+random.seed(42)
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 # ============================================================================
@@ -36,79 +42,139 @@ def inspect_file_structure(data_folder='.'):
     for csv_file in csv_files[:5]:
         filepath = os.path.join(data_folder, csv_file)
         df = pd.read_csv(filepath, nrows=5)
-        print(f"\n📁 {csv_file}")
+        print(f"\n  {csv_file}")
         print(f"   Columns: {df.columns.tolist()}")
         print("-"*40)
 
-def load_pjm_multiple_files(data_folder='.'):
-    """Load PJM data from multiple CSV files - مطابق با مقاله اصلی (۱۳۸۹۶ نمونه)"""
-    client_data = {}
-    # B6 fix (Stage 1B): sort the discovered CSVs so the first `num_clients`
-    # eligible files - and therefore the client set - are identical on every
-    # machine. Selection criteria and the client count are unchanged.
-    csv_files = sorted(f for f in os.listdir(data_folder) if f.endswith('.csv'))
-    print(f"\nScanning {len(csv_files)} CSV files...")
-    
-    for csv_file in csv_files:
-        filepath = os.path.join(data_folder, csv_file)
-        df = pd.read_csv(filepath)
-        client_name = csv_file.replace('.csv', '').replace('_hourly', '')
-        
-        # Stage 1C fix: the raw PJM files are NOT in chronological order (they
-        # are concatenated descending day-blocks), so the positional lags
-        # data[i-24] / data[i-168] did not mean "24 / 168 hours earlier".
-        # Sort rows by the timestamp column, ascending, BEFORE the load series
-        # is extracted and truncated. The sort key is a SEPARATE parsed Series
-        # (the raw column is left untouched) and dt_col is explicitly excluded
-        # from the load-column selection below, so the timestamp can never be
-        # mistaken for the load series. No resampling, interpolation or
-        # imputation is added here.
-        dt_col = None
-        for col in df.columns:
-            if pd.to_numeric(df[col], errors='coerce').notna().mean() > 0.5:
-                continue  # numeric column -> a load/value column, not a timestamp
-            if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
-                dt_col = col
-                break
-        if dt_col is not None:
-            # Stage 1C fix (v2): sort on a SEPARATE parsed key. Converting
-            # df[dt_col] in place made the timestamp column numeric (epoch
-            # integers), so the selector below picked 'Datetime' instead of
-            # '<REGION>_MW' and the targets became ~1e15 (MAE ~1e15, MAPE 100%).
-            order = pd.to_datetime(df[dt_col], errors='coerce') \
-                      .sort_values(kind='mergesort').index
-            df = df.loc[order].reset_index(drop=True)
-            print(f"  sorted {csv_file} ascending by '{dt_col}'")
-        else:
-            print(f"  WARNING {csv_file}: no timestamp column found - order unchanged")
-        
-        for col in df.columns:
-            if col == dt_col:
-                continue  # explicit: the timestamp is never a load series
-            values = pd.to_numeric(df[col], errors='coerce').dropna()
-            if len(values) > 1000:
-                client_data[client_name] = values.values
-                print(f"  ✓ {csv_file} -> {len(values)} readings")
-                break
-    
-    if not client_data:
+# Genuine utility-level series. PJME / PJMW / PJM_Load are PJM *aggregates*
+# (east region, west region, total), and pjm_hourly_est.csv is a wide table
+# whose first numeric column is a second copy of AEP - none of them is a
+# client. Only the files named below are candidates.
+UTILITY_SERIES = ('AEP', 'COMED', 'DAYTON', 'DEOK', 'DOM', 'DUQ', 'EKPC', 'FE', 'NI')
+
+
+def _load_one_series(path):
+    """Read one PJM CSV -> (timestamp-indexed Series, value column name).
+
+    Duplicate timestamps are collapsed by their mean. They are the DST
+    fall-back hour, which occurs twice in local time (e.g. 2014-11-02 02:00),
+    so averaging keeps both readings instead of silently dropping one.
+    Unparsable timestamps are dropped.
+    """
+    df = pd.read_csv(path)
+    dt_col = None
+    for col in df.columns:
+        if pd.to_numeric(df[col], errors='coerce').notna().mean() > 0.5:
+            continue  # numeric column -> a load/value column, not a timestamp
+        if pd.to_datetime(df[col], errors='coerce').notna().mean() > 0.9:
+            dt_col = col
+            break
+    if dt_col is None:
+        return None, None
+    val_col = None
+    for col in df.columns:
+        if col == dt_col:
+            continue
+        if pd.to_numeric(df[col], errors='coerce').notna().sum() > 1000:
+            val_col = col
+            break
+    if val_col is None:
+        return None, None
+    ts = pd.to_datetime(df[dt_col], errors='coerce')
+    s = pd.Series(pd.to_numeric(df[val_col], errors='coerce').values, index=ts)
+    s = s[s.index.notna()]
+    s = s.groupby(level=0).mean().sort_index()
+    return s, val_col
+
+
+def load_pjm_multiple_files(data_folder='.', return_meta=False):
+    """Load the genuine utility series on one shared hourly grid.
+
+    Replaces the old "first numeric column of every *.csv, then take the
+    oldest N rows of each" loader, which (a) admitted PJM aggregates and a
+    duplicate copy of AEP as clients and (b) aligned clients by row position
+    even though their series cover different calendar periods.
+
+    Selection: only UTILITY_SERIES files are read. A series that cannot
+    overlap the others is excluded and reported (NI ends 2011-01-01, before
+    EKPC begins 2013-06-01, so it cannot share an interval with the rest).
+
+    Alignment: the shared interval is [max(first), min(last)] over the
+    surviving series, sampled hourly. Duplicate timestamps are averaged
+    (DST fall-back); the few missing hours (DST spring-forward) are filled by
+    time interpolation and counted in the returned metadata. No other
+    imputation, resampling or smoothing is applied.
+    """
+    series, value_cols = {}, {}
+    print(f"\nScanning {len(UTILITY_SERIES)} utility series "
+          f"(PJM aggregates and pjm_hourly_est.csv are excluded)...")
+    for name in UTILITY_SERIES:
+        path = os.path.join(data_folder, name + '_hourly.csv')
+        if not os.path.exists(path):
+            print(f"  {name:<8} not found - skipped")
+            continue
+        s, col = _load_one_series(path)
+        if s is None or len(s) < 1000:
+            print(f"  {name:<8} no usable load column - skipped")
+            continue
+        series[name] = s
+        value_cols[name] = col
+        print(f"  {name:<8} {len(s):>7} readings  {s.index[0]} .. {s.index[-1]}")
+
+    if not series:
         raise ValueError("No valid numeric data found")
-    
-    # ✅ هم‌تراز کردن با مقاله: ۱۳۸۹۶ نمونه (مطابق داده ۱ مقاله)
-    target_samples = 13896
-    min_length = min(len(data) for data in client_data.values())
-    
-    if min_length > target_samples:
-        print(f"\n  ⚠️ کاهش نمونه‌ها از {min_length} به {target_samples} (مطابق مقاله)")
-        min_length = target_samples
-    else:
-        print(f"\n  ✅ استفاده از {min_length} نمونه (حداقل موجود)")
-    
-    client_names = list(client_data.keys())
-    aligned_data = np.column_stack([client_data[name][:min_length] for name in client_names])
-    
-    print(f"\n✅ Loaded {len(client_names)} clients, Data shape: {aligned_data.shape}")
-    return aligned_data, client_names
+
+    # Drop any series that cannot overlap the others. The binding constraint
+    # is the series that ends first, so that is the one removed.
+    excluded = []
+    while len(series) > 2:
+        lo = max(s.index[0] for s in series.values())
+        hi = min(s.index[-1] for s in series.values())
+        if hi > lo:
+            break
+        victim = min(series, key=lambda n: series[n].index[-1])
+        print(f"  EXCLUDED {victim}: ends {series[victim].index[-1]}, before the "
+              f"others begin - no shared interval")
+        excluded.append(victim)
+        del series[victim]
+
+    lo = max(s.index[0] for s in series.values())
+    hi = min(s.index[-1] for s in series.values())
+    if hi <= lo:
+        raise ValueError("No common time interval across the utility series")
+
+    grid = pd.date_range(start=lo, end=hi, freq='h')
+    client_names = sorted(series)
+    columns, filled = [], {}
+    for name in client_names:
+        s = series[name].reindex(grid)
+        n_missing = int(s.isna().sum())
+        if n_missing:
+            s = s.interpolate(method='time', limit_direction='both')
+        filled[name] = n_missing
+        columns.append(s.values)
+    aligned_data = np.column_stack(columns)
+
+    print(f"\n  shared interval  : {lo} .. {hi}")
+    print(f"  sampling         : hourly ({len(grid)} hours)")
+    print(f"  clients          : {len(client_names)} -> {', '.join(client_names)}")
+    print(f"  missing hours    : "
+          + ", ".join(f"{n}={filled[n]}" for n in client_names))
+    print(f"  data shape       : {aligned_data.shape}")
+
+    if not return_meta:
+        return aligned_data, client_names
+    meta = {
+        'interval_start': str(lo),
+        'interval_end': str(hi),
+        'hours': len(grid),
+        'clients': client_names,
+        'missing_filled': filled,
+        'excluded': excluded,
+        'value_columns': value_cols,
+    }
+    return aligned_data, client_names, meta
+
 # ============================================================================
 # PART 2: FEATURE PREPROCESSING
 # ============================================================================
@@ -1020,7 +1086,8 @@ def run_asla_baseline(data_folder='.', num_rounds=100, agg_layer=1, quant_bits=3
                       num_clients=10, plot=False, out_file='baseline_asla_results.txt',
                       dp_clip=0.0, dp_sigma=0.0, dp_method='none',
                       dp_diagnostics=False,
-                      dp_diagnostics_out='dp_diagnostics.csv'):
+                      dp_diagnostics_out='dp_diagnostics.csv',
+                      json_out=''):
     """ASLA-only baseline (Stage 1 minimal-fix run).
 
     Runs ONLY the single-layer ASLA baseline, skipping the layer sweep, the
@@ -1034,10 +1101,15 @@ def run_asla_baseline(data_folder='.', num_rounds=100, agg_layer=1, quant_bits=3
     method rather than fix a bug.
 
     Documented only, not changed:
-      B3 - NaNs are dropped before the lag features are built, so prev_day /
-           prev_week may not be exactly 24 / 168 hours back.
-      B6 - the client set is the first `num_clients` entries of
-           os.listdir(data_folder); the selected names are printed.
+      B3 - NaNs are dropped before the lag features are built. The corrected
+           loader now returns a gap-free hourly grid (missing hours are
+           interpolated and counted), so the drop is a no-op and prev_day /
+           prev_week are exactly 24 / 168 hours back.
+      B6 - the client set is the genuine utility series that share a common
+           interval (see load_pjm_multiple_files); PJM aggregates and the
+           duplicate AEP copy are excluded, and the selected names, the shared
+           interval and the per-client sample counts are printed and written
+           to the report.
       B7 - per-client early stopping and the ">= 30% stopped" rule can end the
            run before `num_rounds`; the completed round count is reported.
       DP - client-side DP is opt-in via dp_method (default 'none' = OFF, so the
@@ -1060,6 +1132,9 @@ def run_asla_baseline(data_folder='.', num_rounds=100, agg_layer=1, quant_bits=3
            CSV. It is a measurement layer only: the DP update, the RNG sequence,
            the clipping, the noise, the quantization and the aggregation are all
            untouched, and with the flag off nothing extra is computed.
+      json_out - optional path for a machine-readable record of the run
+           (status, configuration, data interval, per-round history and
+           per-client final metrics). Empty by default = no JSON written.
     """
     print("=" * 60)
     # Console banner: the title must match the method actually in effect, so a
@@ -1079,7 +1154,8 @@ def run_asla_baseline(data_folder='.', num_rounds=100, agg_layer=1, quant_bits=3
     print("=" * 60)
 
     inspect_file_structure(data_folder)
-    client_data, client_names = load_pjm_multiple_files(data_folder)
+    client_data, client_names, data_meta = load_pjm_multiple_files(
+        data_folder, return_meta=True)
 
     clients = []
     for i, name in enumerate(client_names[:num_clients]):
@@ -1136,11 +1212,34 @@ def run_asla_baseline(data_folder='.', num_rounds=100, agg_layer=1, quant_bits=3
     mae = history.get('mae', [])
     participants = history.get('participants', [])
 
+    # Per-client final metrics on the held-out test split. Each client model is
+    # a personalised hybrid (the shared global selected layer + that client's
+    # own other layers), so these are per-client hybrid results - not the error
+    # of one single global model.
+    per_client = []
+    for c in clients:
+        res = c.evaluate()
+        per_client.append({
+            'client': c.name,
+            'mape': float(res[2]) if len(res) >= 3 else None,
+            'mae': float(res[1]) if len(res) >= 2 else None,
+            'mse': float(res[0]) if len(res) >= 1 else None,
+            'train_samples': int(len(c.X_train)),
+            'test_samples': int(len(c.X_test)),
+        })
+
     report = []
     report.append("=" * 60)
     report.append("ASLA BASELINE RESULTS (Stage 1B)")
     report.append("=" * 60)
     report.append(f"  data folder        : {os.path.abspath(data_folder)}")
+    report.append(f"  shared interval    : {data_meta['interval_start']} .. "
+                  f"{data_meta['interval_end']}")
+    report.append(f"  sampling           : hourly ({data_meta['hours']} hours)")
+    report.append(f"  excluded series    : "
+                  + (", ".join(data_meta['excluded']) if data_meta['excluded']
+                     else "<none>")
+                  + " (aggregates / duplicates / no shared interval)")
     report.append(f"  selected clients   : {', '.join(c.name for c in clients)}")
     report.append(f"  selected layer     : model.layers[{agg_layer}] = {probe_layer.name} "
                   f"({layer_params} params)")
@@ -1167,9 +1266,17 @@ def run_asla_baseline(data_folder='.', num_rounds=100, agg_layer=1, quant_bits=3
         report.append("  final MAPE         : <no round produced a finite MAPE>")
     report.append("  note               : MAPE/MAE are the mean over personalised-hybrid")
     report.append("                       client models (B5), NOT one fully global model.")
-    report.append("  known limitation   : B3 - NaNs are dropped before the lag features")
-    report.append("                       are built, so prev_day/prev_week may not be")
-    report.append("                       exactly 24 / 168 hours back.")
+    report.append("  MAPE policy        : Keras MAPE is already a percentage; every")
+    report.append("                       client load is > 500 MW, so no near-zero")
+    report.append("                       denominator occurs and no clipping is applied.")
+    report.append("")
+    report.append("  per-client final metrics (personalised hybrid, held-out test):")
+    report.append(f"    {'client':<8} {'MAPE %':>9} {'MAE':>10} {'MSE':>14} "
+                  f"{'train':>7} {'test':>7}")
+    for row in per_client:
+        report.append(f"    {row['client']:<8} {row['mape']:>9.2f} {row['mae']:>10.2f} "
+                      f"{row['mse']:>14.1f} {row['train_samples']:>7d} "
+                      f"{row['test_samples']:>7d}")
     for line in report:
         print(line)
 
@@ -1179,6 +1286,50 @@ def run_asla_baseline(data_folder='.', num_rounds=100, agg_layer=1, quant_bits=3
         print(f"\n  results saved to   : {os.path.abspath(out_file)}")
     except OSError as exc:
         print(f"\n  WARNING: could not write '{out_file}': {exc}")
+
+    # --- Optional machine-readable record of the run -------------------------
+    if json_out:
+        payload = {
+            'status': 'completed' if mape else 'failed',
+            'config': {
+                'data_folder': os.path.abspath(data_folder),
+                'rounds_requested': num_rounds,
+                'rounds_completed': len(mape),
+                'agg_layer': agg_layer,
+                'agg_layer_name': probe_layer.name,
+                'agg_layer_params': int(layer_params),
+                'quant_bits': quant_bits,
+                'dp_method': dp_method,
+                'dp_clip': dp_clip,
+                'dp_sigma': dp_sigma,
+                'local_epochs': 1,
+                'batch_size': 300,
+                'optimizer': 'Adam(1e-3)',
+                'loss': 'mse',
+                'lookback': 24,
+                'test_size': 0.3,
+                'split': 'chronological (shuffle=False)',
+                'scaler': 'StandardScaler fitted on the training split only',
+            },
+            'data': data_meta,
+            'history': {
+                'mape': [float(v) for v in mape],
+                'mae': [float(v) for v in mae],
+                'participants': [int(v) for v in participants],
+            },
+            'final': {
+                'mape': float(mape[-1]) if mape else None,
+                'mae': float(mae[-1]) if mae else None,
+                'best_mape': float(min(mape)) if mape else None,
+            },
+            'per_client': per_client,
+        }
+        try:
+            with open(json_out, 'w', encoding='utf-8') as fh:
+                json.dump(payload, fh, indent=2)
+            print(f"  JSON saved to      : {os.path.abspath(json_out)}")
+        except OSError as exc:
+            print(f"\n  WARNING: could not write '{json_out}': {exc}")
 
     # --- Write the optional DP diagnostics CSV (only when it was active) -----
     if diag_out_path is not None:
@@ -1260,9 +1411,15 @@ def main():
                         help="CSV file for --dp-diagnostics (default: "
                              "dp_diagnostics.csv; a _1/_2/... name is chosen "
                              "instead of overwriting an existing file)")
+    parser.add_argument('--json-out', default='',
+                        help="optional path for a machine-readable JSON record "
+                             "of the run (status, config, data interval, "
+                             "per-round history, per-client metrics); "
+                             "default: no JSON written")
     args = parser.parse_args()
     np.random.seed(args.seed)
     tf.random.set_seed(args.seed)
+    random.seed(args.seed)
     if args.asla_only:
         run_asla_baseline(data_folder=args.data_folder,
                           num_rounds=args.rounds,
@@ -1275,7 +1432,8 @@ def main():
                           dp_sigma=args.dp_sigma,
                           dp_method=args.dp_method,
                           dp_diagnostics=args.dp_diagnostics,
-                          dp_diagnostics_out=args.dp_diagnostics_out)
+                          dp_diagnostics_out=args.dp_diagnostics_out,
+                          json_out=args.json_out)
         return
 
     run_experiment(args.data_folder)
